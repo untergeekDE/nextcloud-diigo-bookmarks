@@ -6,7 +6,7 @@ This code was created to save my [Diigo](https://www.diigo.com) bookmarks librar
 
 ## A word on Diigo
 
-Diigo was unique when I first started using it around 2016. But it seems to be the effort of esentially one programmer, and the API gives a strong vibe of "I'll complete that when I get round to it". As of 2024, it is still running - sort of. My bookmarks library is never quite up to date, and searching is a hit-and-miss thing. I take this as a sign that the servers and code are no longer properly maintained, and that it is time to leave. 
+Diigo was unique when I first started using it - and paying for it - around 2016. But it seems to be the effort of esentially one programmer, and the API gives a strong vibe of "I'll complete that when I get round to it". As of 2024, it is still running - sort of. My bookmarks library is never quite up to date, and searching is a hit-and-miss thing. I take this as a sign that the servers and code are no longer properly maintained, and that it is time to leave. 
 
 So the original task was to import a bookmarks file exported from Diigo, and import it to a Nextcloud installation via the [Nextcloud Bookmarks API](https://nextcloud-bookmarks.readthedocs.io/en/latest/). Once that worked, I added code to maintain and clean the Nextcloud bookmarks, and access, read, edit, and remove the Diigo bookmarks via Diigo's API. 
 
