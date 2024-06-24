@@ -6,6 +6,10 @@ import requests
 import pandas as pd
 from urllib.parse import quote
 import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 from config import *
@@ -24,6 +28,13 @@ from import_csv import update_bookmarks
 #
 # Props for this forgotten repository which made me realize the auth method: 
 # https://github.com/chriskyfung/Evernote-ENEX-to-Diigo-Bookmarks
+#
+# Probably also valid (undocumented) API calls: 
+# - load_user_items
+# - load_shared_to_groups
+# - load_user_info
+# - load_user_tags&type=all
+# - POST/delete_b
 
 # This checks whether Diigo can be reached: 
 
@@ -50,6 +61,7 @@ def get_diigo_bookmarks(d_start = 0, d_count= 10, tags=""):
         return bookmarks
     else:
         print(f"Failed to reach bookmarks. Status code: {response.status_code}")
+        print(f"API Message: {response.text}")
         return None
 
 def probe_diigo_bookmarks():
@@ -98,7 +110,8 @@ def write_diigo_bookmark(title,url, # these are required, i.e. they ID the bookm
         return True
     else:
         print(f"Failed to write bookmark '{title}' ({url}).\nStatus code: {response.status_code}")
-        return None    
+        print(f"API Message: {response.text}")
+        return None   
 
 def delete_diigo_bookmark(title,url):
     # Experimental: Delete bookmark via API. The API description hints at it but does not
@@ -121,7 +134,110 @@ def delete_diigo_bookmark(title,url):
         return response.json()
     else:
         print(f"Failed to delete bookmark '{title}' ({url}).\nStatus code: {response.status_code}")
+        print(f"API Message: {response.text}")
         return None    
+
+### Functions using the interaction API of the website ### 
+
+# Start a session and return a session cookie. 
+
+# Returns a list of info. 
+def get_diigo_info(page=0,sort='updated',count=24, session=None):
+    # Experimental: get bookmark IDs
+    # Set session cookie first by authenticating
+    d_params = {
+        'key': quote(diigo_key),
+        'user': quote(diigo_user),
+        'page_num': page,
+        'sort': 'updated',
+        'count': count,
+    }
+    if session != None: 
+        response = session.get("https://www.diigo.com/interact_api/load_user_items",
+                            headers = {
+                                "Accept": "application/json", 
+                                "Content-Type": "application/json",
+
+                                "Authorization": "basic"
+                                }, 
+                            params = d_params,
+                            auth=(diigo_user, diigo_pw),
+                            )
+    else:
+        response = requests.get("https://www.diigo.com/interact_api/load_user_items",
+                            headers = {
+                                "Accept": "application/json", 
+                                "Content-Type": "application/json",
+
+                                "Authorization": "basic"
+                                }, 
+                            params = d_params,
+                            auth=(diigo_user, diigo_pw),
+                            )
+    if response.status_code == 200:
+        with open("./response.html", 'w') as f:
+            f.write(response.text)
+        return response.json()
+    else:
+        print(f"Failed to reach load_user_items.\nStatus code: {response.status_code}")
+        print(f"API gives this reason: {response.text}")
+        return None    
+
+
+def delete_b_diigo_bookmark(title,url):
+    # Experimental: Delete bookmark via API. The API description hints at it but does not
+    # make this explicit. 
+    # Not using the CURL DELETE method but rather a POST to the API
+    # with a different verb 
+    d_params = {
+        'title': title,
+        'url': url,
+    }
+    response = requests.post("https://www.diigo.com/interact_api/delete_b",
+                            params = d_params,
+                            headers= auth_headers,
+                            auth=(diigo_user, diigo_pw),
+                            )
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Failed to delete bookmark '{title}' ({url}).\nStatus code: {response.status_code}")
+        return None    
+
+def diigo_login():
+    # Initialize the Selenium WebDriver (you may need to adjust this based on your browser)
+    driver = webdriver.Firefox()  # Or webdriver.Firefox(), etc.
+    try:
+        # Navigate to the Diigo login page
+        driver.get('https://www.diigo.com/sign-in')
+    
+        # Wait for the user to manually log in
+        print("Please log in to Diigo in the opened browser window.")
+        print("Once you've successfully logged in, the script will continue.")
+
+        # Wait for the user to be redirected to the dashboard or home page after login
+        WebDriverWait(driver, 300).until(
+            EC.url_contains('https://www.diigo.com/user/')
+        )
+
+        # Get the cookies from the authenticated session
+        selenium_cookies = driver.get_cookies()
+
+        # Create a new requests session and add the cookies
+        session = requests.Session()
+        for cookie in selenium_cookies:
+            session.cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'])
+
+        print("Login successful and session created.")
+        return session
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+    finally:
+        # Close the browser
+        driver.quit()
 
 
 def test_diigo_api():
@@ -136,11 +252,14 @@ def test_diigo_api():
     # Try overwriting it
     write_diigo_bookmark(title="TEST",url="https://janeggers.tech",desc="New Description",tags="nc_experimental")
     print(f"Overwritten bookmark: \n{get_diigo_bookmarks(tags='nc_experimental')}")
+    # Start a session for the interaction API; login and authenticate
+    session = diigo_login()
+    test = get_diigo_info(session = session)
+    print(test)
     # Cannot be found but the bookmark is there!
     # Try destroying it
-    r = delete_diigo_bookmark(title="TEST", url="https://janeggers.tech")
+    r = delete_b_diigo_bookmark(title="TEST", url="https://janeggers.tech")
     print(r)
-
 
 if __name__ == "__main__":
     # First check if routine is already running (for CRON)
@@ -152,6 +271,7 @@ if __name__ == "__main__":
     # Runs pretty well on my Raspi, killing away at those old
     # bookmarks. Bye, training data. 
     probe_diigo_bookmarks()
+    test_diigo_api()
     print(f"Greetings. Downloading and destroying all Diigo bookmarks for user {diigo_user}")
     diigo_dump_path = "./diigo_dump.csv"
     print(f"Will create a file named '{diigo_dump_path}' with all bookmarks, then erase them via the API.")
