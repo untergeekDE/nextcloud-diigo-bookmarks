@@ -1,6 +1,6 @@
 # Nextcloud Bookmarks V0.2
 
-VERY PRE-ALPHA: Code to add, edit and improve bookmarks in the [Nextcloud Bookmarks]() app. 
+VERY PRE-ALPHA: Code to use the API of bookmarking service [Diigo](https://www.diigo.com) to rescue and eventually delete them, and to add, edit and improve bookmarks in the [Nextcloud Bookmarks](https://apps.nextcloud.com/apps/bookmarks) app. 
 
 This code was created to save my [Diigo](https://www.diigo.com) bookmarks library. I have been a long-time paying user of the Diigo bookmarking service, but as it seems to be breaking down gradually, and and it is not a good idea to have a public bookmark file in the age of AIs being trained on public data, I decided to move all of my bookmarks to my Nextcloud. 
 
