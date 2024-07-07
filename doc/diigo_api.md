@@ -32,6 +32,8 @@ The little original documentation there is can be found at https://www.diigo.com
 
 Get a list of bookmarks, sorted by the API, and hopefully filtered by the parameters. (It does not seem to work correctly for tags.)
 
+* HTTP Method: GET
+
 Parameters (via a params dictionary):
 - start: offset (default = 0)
 - count: number of bookmarks to list
@@ -68,6 +70,8 @@ response = requests.get("https://secure.diigo.com/api/v2/bookmarks",
 ```
 ### Write a bookmark
 
+* HTTP Method: POST
+
 Bookmarks are identified via URL and title, so if those already exist, the bookmark is modified; if not, it is created. The merge=<"yes"|"no"> parameter selects whether the specifications are appended or overwritten. 
 
 Python Example: 
@@ -88,11 +92,14 @@ response = requests.post("https://secure.diigo.com/api/v2/bookmarks",
 ```
 
 Responds with a json stating success. Contents are not really that valuable.
+
 ### Delete a bookmark
 
 Undocumented method to delete a bookmark via a CURL DELETE call. Bookmark to delete is identified by URL and title. 
 
 Heavily rate-limited. It seems to work if you run it in an authenticated session, and with a short delay after each delete (I tried 5 seconds)
+
+* HTTP Method: DELETE
 
 Responds with a json stating success. Contents are not really that valuable.
 
@@ -132,7 +139,6 @@ Known commands:
 * **load_user_info**
 * **load_user_groups**
 * **load_shared_to_groups** 
-
 
 ### '''load_user_items''' - Get bookmark list
 
@@ -230,6 +236,7 @@ Creating, modifiying, and deleting, is done by yet another set of API commands. 
 
 * End points: ```https://www.diigo.com/ditem_mana2/```, ```https:///www.diigo.com/item/save/bookmark```
 * Authentication: HTTP Basic, session cookies, user agent
+* HTTP Method: POST
 
 **Still not sure how to authenticate.** Although the same kind of authentication methods as with the Interaction API seem to work (session cookies, User-Agent), delete_b returns 403 ('Forbidden'). Looking at the network connection, it might be that this call really needs to be issued from the Diigo server and nowhere else. Write/rewrite and modification seems to work fine although the calls return a non-JSON HTML page. 
 
