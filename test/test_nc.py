@@ -1,3 +1,9 @@
+############ OBSOLETE ##############
+# 
+# Very first test to reach the Nextcloud via the API,
+# using a dedicated package rather than simple requests calls
+
+
 # Kurzer Test der Nextcloud-API
 #
 # Nutze App-Login

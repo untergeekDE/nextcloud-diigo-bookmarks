@@ -1,10 +1,13 @@
-# Nextcloud Bookmarks V0.2
+# Nextcloud/Diigo Bookmarks V0.4
 
 VERY PRE-ALPHA: Code to use the API of bookmarking service [Diigo](https://www.diigo.com) to rescue and eventually delete them, and to add, edit and improve bookmarks in the [Nextcloud Bookmarks](https://apps.nextcloud.com/apps/bookmarks) app. 
 
+**Although quite a lot of the stuff already works, the function needed to bulk-delete Diigo bookmarks does not.** The only way to remove a bookmark, as of now, is to use the (slow, complicated, buggy) offical API call. -- Have a thorough look at the ```test_diigo_api()``` routine in ```diigo_ap.py``` to understand what works and how it is done. 
+
 This code was created to save my [Diigo](https://www.diigo.com) bookmarks library. I have been a long-time paying user of the Diigo bookmarking service, but as it seems to be breaking down gradually, and and it is not a good idea to have a public bookmark file in the age of AIs being trained on public data, I decided to move all of my bookmarks to my Nextcloud. 
 
-Authentication is a mess, but the routines work as a proof-of-concept so I am uploading them in case I haven't got the time to continue working on this. 
+Only some of the functions are up and running; but most of it is there in the code. Will 
+improve step by step. 
 
 ## A word on Diigo
 
@@ -12,21 +15,57 @@ Diigo was unique when I first started using it - and paying for it - around 2016
 
 So the original task was to import a bookmarks file exported from Diigo, and import it to a Nextcloud installation via the [Nextcloud Bookmarks API](https://nextcloud-bookmarks.readthedocs.io/en/latest/). Once that worked, I added code to maintain and clean the Nextcloud bookmarks, and access, read, edit, and remove the Diigo bookmarks via Diigo's API. 
 
-The Diigo API is a mixed bag - [find my documentation of it here](diigo_api.md). I am still evaluating the API calls the Diigo website itself uses, as they are capable of doing things the official API does not support. 
+The Diigo API is a mixed bag - [find my documentation of it here](doc/diigo_api.md). I am still evaluating the API calls the Diigo website itself uses, as they are capable of doing things the official API does not support. 
 
 ## What this code is for
 
 - Import a CSV file containing Diigo bookmarks
 - Write new bookmarks to a DIIGO folder 
-- Check whether bookmarks are still valid, and move to another folder if the bookmark url cannot be reached
-- Backup and Overwrite/erase Diigo bookmarks
+- Backup Diigo bookmarks
+- Delete Diigo bookmarks
+- Import Diigo bookmarks into Nextcloud
 
 It is supposed to be doing those things as well pretty soon: 
 - Groom the tags: check all tags that have been used only once
 - Use a local AI for summarizing and tagging websites that have no description
-- Import bookmarks directly from a Diigo account
 
-I am going to put the most useful options into a simple command-line app that lets you select what you would like to do. As long as this does not work, you might have to write your own code to use those routines. 
+### How to install and run
+
+* You will need a Python environment. Anything >= 3.7 should be fine.
+* Get a copy of the files to your computer: 
+	* Download a ZIP of the repository and unpack to a local folder 
+	* ...or simply use git: ```git clone https://github.com/untergeekDE/nextcloud-diigo-bookmarks.git```
+* If you want to, put your user/password information for Diigo and Nextcloud into the key file at ```~/.ncdbookmarks/key.yaml```. (As of now, you might still need a Diigo API key although I don't actually use it for most functions)
+* Change into the directory.
+* Get the necessary libraries: ```pip -r requirements.txt```
+* Start on the command line: ```python main.py```
+
+The program checks the credentials for Diigo and your Nextcloud installation, opens a Firefox browser window to have you authenticate a Diigo session, and offers you a set of tools and functions via a simple command-line interface. 
+
+### What you need to run it
+- Python (anything >= 3.7 should be fine)
+- The libraries listed in the ```requirements.txt``` file - some odd ones like [Selenium](https://www.selenium.dev/), [console-menu](https://github.com/aegirhall/console-menu), PyYAML
+- A Firefox browser (Chrome support will be added soon)
+- A diigo account
+- A [Nextcloud](https://nextcloud.com/install/#instructions-server) instance running the [Bookmarks](https://apps.nextcloud.com/apps/bookmarks) app
+- if you want to use AI to check bookmarks for you, I rely on a local model running on your machine: You will need [Ollama](https://ollama.com/) running on your computer, and enough memory, disk space and compute to run the [Aya](https://ollama.com/library/aya) or [Gemma2-9B](https://ollama.com/library/gemma2) model (which are both quite capable). Which kind of excludes anything below 8GB graphics memory.
+- patience
+
+### Todo 
+
+- Take credentials 
+- Actual loop to add AI description
+- Tagging with AI
+- Reimport into Diigo (if only for further testing)
+- Reauthentication of Diigo
+- Logon to other Nextcloud
+- Tools submenu
+	- Comparison of Diigo and Nextcloud bookmarks
+	- Tags analysis
+	- Manual editing
+- Add Chrome support
+- Check whether Firefox, or Chrome, is actually on the system
+- Add OpenAI GPT4o/Anthropic Claude3 API support 
 
 I hope the code is documented and structured well enough that you can use it for your own projects, and save you some time. I am not the world's best Python coder but things work. 
 
@@ -53,20 +92,21 @@ There are a couple of things the NC Bookmarks app does not do quite as well as D
 * **rework_sql_library.py**: A routine to import a SQL dump, and set the created_at field to the Diigo creation date saved in the description (TODO)
 
 ### Authentication
-...is a mess right now, sorry about that. 
 
-* **To authenticate your Nextcloud bookmarks app**, you will have to:
-	- define the global variable with the Nextcloud user to use: ```nc_user = "MyUser"``` in the ```config.py``` file
-	- generate an application key in Nextcloud for that user, 
-	- save that key as a single string in a file ```~/key/nc.key``` (a directory for storing your API keys in your home dir)
+The program looks in the ```.ncdbookmarks``` directory for credential files. If it doesn't find them, or they don't work, it asks for the credentials. 
 
-* **To use Diigo**, you will have to do a tad bit more:
-	- create an API key [here](https://www.diigo.com/api_keys/new/) and save it as a string to a file ```~/key/diigo_api.key```
-	- define ```diigo_user = "MyDiigoUser"``` as a global variable in the ```config.py``` file
-	- write your Diigo password as a single string to a ```~/key/diigo_pw.key``` file
+* **To use Diigo**, the main routine will ask you to:
+	- create an API key [here](https://www.diigo.com/api_keys/new/)
+	- supply user and password
 	- authenticate Diigo in a browser session when prompted
 
-Apologies for the inconvenience, working on a better way to do this. Hopefully, one file with all the users and keys, and reauthentication if necessary. 
+* **To authenticate your Nextcloud bookmarks app**, you will have to suppy user and password
+
+The credits for Diigo and Nextcloud are saved in a YAML file at ```.ncdbookmarks/key.yaml```. You can modify the file directy. A sample file ```sample_key.yaml``` can be found in the project directory. 
+
+Once the Diigo session is authenticated, the session cookies are saved to a YAML file at ```.ncdbookmarks/session_cookies.yaml```.
+
+As most of the heavy lifting on Diigo is now done via the Interaction API which does not need an API key, the requirement for a Diigo API key might actually be dropped. 
 
 ### Libraries and files: 
 
@@ -78,11 +118,5 @@ Hinting where you find the routines you may use for your own code
 
 * **config.py** contains global variables like filenames and paths
 
-Documentation dump on what the functions do, and on data formats, [here](code_doc.md).
-
-### Todo 
-
-- Main routine with simple command-line menus to perform maintenance 
-- Actual loop to add AI description
-- Tagging with AI
+Documentation dump on what the functions do, and on data formats, [can be found here](doc/code_doc.md).
 

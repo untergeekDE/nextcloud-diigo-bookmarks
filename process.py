@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 import ollama
 import json
+from datetime import datetime
  
 from config import *
 
@@ -18,6 +19,8 @@ def tag_process(s):
     tags_list = [t.replace("_"," ") for t in tags_list]
     return tags_list
 
+# Convert a list into a dictionary sorted by frequency.
+# Use to convert a list of all tags
 def convert_to_dict(l):
     d = {}
     for t in l:
@@ -42,7 +45,60 @@ def better_desc(d1,d2):
         return d1
     return d2 + "# PREVIOUS\n" + d1
 
-def suggest_description(url):
+def annotations_to_highlights(annotations):
+    """
+    takes a list of annotations and steps through the
+    'content' keys
+
+    Throw everything else away - although there might be 
+    occasional annotations as well. 
+    """
+    highlights = ""
+    for i in annotations:
+        highlights += i['content']
+    return highlights
+
+# Take the raw fields from a Diigo bookmark/bookmark file, and process
+def refactor_diigo_bookmark(url,
+                            title,
+                            tags="",
+                            description="",
+                            annotations=[],
+                            comments=[],
+                            created_at=0,
+                            llm= '###LLM###'
+    ):
+    description = str(description)
+    if description == "nan":
+        description = ""
+    annotations = annotations_to_highlights(annotations)
+    if annotations== "nan":
+        annotations=""
+    # Convert Unix time to datetime
+    if isinstance(created_at,int):
+        created_at = datetime.fromtimestamp(created_at)
+    
+    # Create description containing all information 
+    desc = f"""{description}
+
+# BOOKMARKED
+{created_at}
+
+# LLM_DESCRIPTION
+{llm}
+
+# ANNOTATIONS
+{annotations}
+"""
+    d = {
+        'url': url,
+        'title': title,
+        'tags': tag_process(tags),
+        'description': desc
+    }
+    return d
+
+def suggest_description(url,description = ""):
     # Fetch the webpage content
     response = requests.get(url)
     if response.status_code == 200:
@@ -56,8 +112,10 @@ def suggest_description(url):
         sys_p = summarize_prompt
         summary_string = f"""
         URL: {url}
-        TITEL: {title}
-        INHALT: {main_content}
+        TITLE: {title}
+        {"DESCRIPTION",description if description != "" else ""}
+        PAGE CONTENT: 
+        {main_content}
         """
         messages = [{
             'role': 'system',
@@ -100,16 +158,3 @@ def write_bookmarks_file(bookmarks_dict, lastdate):
     with open(tags_path, 'w') as f:
         json.dump(export_dict, f)
     
-
-
-def retrieve_all_tags():
-    # Looks for a tag file to save time. 
-    # If there is none, create it: 
-    # - Get all bookmarks
-    # - Write date of last bookmark stored 
-    # - Write JSON of all bookmarks
-    return None
-
-def improve_bookmark(b):
-    
-    return False

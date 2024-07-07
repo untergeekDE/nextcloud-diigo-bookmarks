@@ -1,0 +1,16 @@
+beautifulsoup4
+certifi
+console-menu
+getpass
+jsonmerge
+jsonpatch
+jsonpointer
+jsonschema
+numpy
+oauthlib
+pandas
+pytz
+PyYAML
+requests
+requests-oauthlib
+selenium

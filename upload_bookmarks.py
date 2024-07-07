@@ -5,27 +5,19 @@
 
 from config import *
 from nc_bookmarks_api import * 
-from import_csv import get_bookmarks
+from import_csv import get_bookmarks, get_nc_bookmarks
 from process import *
-from helpers import get_nc_key
+from config_lib import get_nc_key
 
 # import run
 
 if __name__ == "__main__":
     nc_key = get_nc_key()
-    probe_bookmarks()
+    probe_nc_bookmarks()
     bookmarks_df = get_bookmarks(b_path)
     print(bookmarks_df.head(5))
-    # Is there already a folder called DIIGO?
-    folder_id = get_folder_id("DIIGO")
-    if folder_id == None:
-        print("Creating folder DIIGO...")
-        folder_id = create_folder("DIIGO")
-        if folder_id == None:
-            raise Exception("Could not create DIIGO folder")
-    else:
-        print(f"Folder DIIGO has id {folder_id}")
-    diigo_df = get_bookmarks(b_path)
+    diigo_folder = get_nc_diigo_folder()
+    diigo_df = get_nc_bookmarks(b_path)
     # tags ist ein String, müssen wir erst splitten - 
     # und wenn wir dabei sind, gleich klein schreiben.
     print(f"Number of bookmarks: {len(diigo_df)}")
@@ -34,7 +26,8 @@ if __name__ == "__main__":
         l.extend(tag_process(t))
     d = convert_to_dict(l)
     # Write bookmarks to Diigo folder
-    for i in range(3841,len(diigo_df)):
+    for i in range(0,len(diigo_df)):
+
         title = str(diigo_df['title'][i])
         url = str(diigo_df['url'][i])
         tags = tag_process(diigo_df['tags'][i]) # Split and clean
@@ -62,12 +55,12 @@ if __name__ == "__main__":
         # Get dict of bookmark if exists
         print(f"Bookmark {i+1} of {len(diigo_df)}:")
         print(url)
-        d = find_bookmark(url=url,folder_id=folder_id)
+        d = find_nc_bookmark(url=url,folder_id=folder_id)
         if len(d) == 0:
             # Creating bookmark
             print(title)
             print(desc)
-            r = create_bookmark(url=url,
+            r = create_nc_bookmark(url=url,
                 title=title,
                 description=desc,
                 tags=tags,
@@ -88,7 +81,7 @@ if __name__ == "__main__":
                         'tags': list(set(tags + dd['tags'])),
                         'folders': [folder_id]
                     }
-                    r = edit_bookmark(id,data)
+                    r = edit_nc_bookmark(data,id)
                     print(f"Modified id {r}")
                                                 
 
