@@ -1,7 +1,6 @@
 beautifulsoup4
 certifi
 console-menu
-getpass
 jsonmerge
 jsonpatch
 jsonpointer
