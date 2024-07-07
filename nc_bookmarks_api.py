@@ -100,6 +100,7 @@ def edit_nc_bookmark(data,id=None):
     else:
         print(f"Failed to create bookmark. Status code: {response.status_code}")
 
+# Retrieve a list of bookmarks from the given folder, selected by the given tags and filter word
 def get_nc_bookmarks(page = 0,
                      limit = 10,
                      tags = [],

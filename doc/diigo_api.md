@@ -74,6 +74,14 @@ response = requests.get("https://secure.diigo.com/api/v2/bookmarks",
 
 Bookmarks are identified via URL and title, so if those already exist, the bookmark is modified; if not, it is created. The merge=<"yes"|"no"> parameter selects whether the specifications are appended or overwritten. 
 
+Parameters (via a params dictionary):
+- key
+- user 
+- url
+- title
+- desc
+- merge: <"yes"|"no">
+
 Python Example: 
 ```
 response = requests.post("https://secure.diigo.com/api/v2/bookmarks",
@@ -101,7 +109,15 @@ Heavily rate-limited. It seems to work if you run it in an authenticated session
 
 * HTTP Method: DELETE
 
-Responds with a json stating success. Contents are not really that valuable.
+Parameters: 
+- user
+- apikey
+- url
+- title
+
+The bookmark to delete is identified by url and title. 
+
+Responds with a json containing a "message" parameter that states the number of actually deleted bookmarks. 
 
 Python Example
 ```
@@ -140,11 +156,11 @@ Known commands:
 * **load_user_groups**
 * **load_shared_to_groups** 
 
-### '''load_user_items''' - Get bookmark list
+### ```load_user_items``` - Get bookmark list
 
 Get a list of bookmarks, sorted by the API. 
-Endpoing: ```https://www.diigo.com/interact_api/```
-HTTP method: GET
+* Endpoing: ```https://www.diigo.com/interact_api/```
+* HTTP method: GET
 
 Parameters (via a params dictionary):
 - page_num: offset (default = 0), negative values are allowed
@@ -166,7 +182,7 @@ Returns a json/dict with items containing these parameters:
 
 ...and a couple more, containing info on who bookmarked an URL first on Diigo, and which groups a bookmark might belong to. See sample output below. 
 
-The most important info is probably *link_id
+The most important info is probably *link_id*
 
 Python Example: 
 ```
@@ -195,9 +211,8 @@ Sample output:
 ### ```search_user_items``` - Get filtered bookmark list
 
 Get a list of bookmarks filtered by the "What" parameter (which seems to filter for title)
-Endpoint: ```https://www.diigo.com/interact_api/search_user_items````
-HTTP method: GET
-
+* Endpoint: ```https://www.diigo.com/interact_api/search_user_items```
+* HTTP method: GET
 
 Basically the same as ```load_user_items``` but with filtering by the 'what' parameter. That seems to look through title, url, and description - same as in the webui - and isn't very good. Other parameters are the same as load_user_items
 
@@ -212,9 +227,13 @@ Parameters:
 ### ```bookmark```- (POST) Create a bookmark
 
 Creates/Overwrites a bookmark
-Endpoint: ```https:///www.diigo.com/item/save/bookmark```
-HTTP Method: POST
+* Endpoint: ```https:///www.diigo.com/item/save/bookmark```
+* HTTP Method: POST
+* Authentication: session, basic auth, User-Agent
 
+This endpoint needs the User-Agent parameter in the CURL header to be set to a common browser. Having the standard Python requests User-Agent does not work. 
+
+Parameters:
 - title
 - url
 - link_id: str (identifies existing bookmark - see below)
@@ -229,27 +248,27 @@ Creates a new bookmark, or overwrite existing bookmark. Check whether bookmark e
 
 Returns a HTML page rather than a JSON but seems to work regardless. 
 
-
 ## The Bulk Management API - same as Interaction API but...
 
-Creating, modifiying, and deleting, is done by yet another set of API commands. You can see it at work loading the Diigo website with the browser tools opened, looking at the Network tab; but authentication seems not to work. Maybe it is only accepted when coming from the Diigo.com website - must check. 
+Bulk modifiying, and deleting, is done by yet another set of API commands. You can see it at work loading the Diigo website with the browser tools opened, looking at the Network tab; but authentication does not seem to work as with the Interaction API. Maybe it is only accepted when coming from the Diigo.com website - must check. 
 
-* End points: ```https://www.diigo.com/ditem_mana2/```, ```https:///www.diigo.com/item/save/bookmark```
-* Authentication: HTTP Basic, session cookies, user agent
+* Endpoint: ```https://www.diigo.com/ditem_mana2/```
+* Authentication: HTTP Basic, session cookies, user agent, ?
 * HTTP Method: POST
 
-**Still not sure how to authenticate.** Although the same kind of authentication methods as with the Interaction API seem to work (session cookies, User-Agent), delete_b returns 403 ('Forbidden'). Looking at the network connection, it might be that this call really needs to be issued from the Diigo server and nowhere else. Write/rewrite and modification seems to work fine although the calls return a non-JSON HTML page. 
+**Still not sure how to authenticate.** Although the same kind of authentication methods as with the Interaction API seem to work (session cookies, User-Agent), delete_b returns 403 ('Forbidden'). Looking at the network connection, it might be that this call really needs to be issued from the Diigo server and nowhere else.  
 
 These commands are known. 
-* **delete_b** (POST) -- DOES NOT WORK YET
-* **mark_readed** (POST) Read/unread
-* **convert_mode** (POST) Private/Public
+* **delete_b** (POST) Delete a list of bookmarks
+* **mark_readed** (POST) Read/unread a list of bookmarks
+* **convert_mode** (POST) Set  a list of bookmarks Private/Public
 
-
-### ```delete_b``` (POST) - Remove all bookmarks in a list
+### ```delete_b``` - Remove all bookmarks in a list
 
 Remove a list of bookmarks identified by their link ID.
-Endpoint: ```https://www.diigo.com/ditem_mana2/delete_b```
+
+* Endpoint: ```https://www.diigo.com/ditem_mana2/delete_b```
+* HTTP method: POST
 
 - link_id: **string with comma-separated list** of link_ids
 
@@ -268,21 +287,21 @@ response = session.get("https://www.diigo.com/ditem_mana2/delete_b",
                             )
 ```
 
-
-
 ### ```mark_readed``` (POST)
 
-Mark a bookmark as read or unread
-Endpoint: ```https://www.diigo.com/ditem_mana2/mark_readed```
+Mark bookmark(s) as read or unread
+* Endpoint: ```https://www.diigo.com/ditem_mana2/mark_readed```
+* HTTP method: POST
 
 - link_id: string with comma-separated list of link_ids
 - readed: <"0"|"1"> "0" is unread
 
 ### ```convert_mode``` - Set public/private
 
-Set a bookmark to public/private
-Endpoint: ```https://www.diigo.com/ditem_mana2/convert_mode```
+Set bookmark(s) to public/private
 
+* Endpoint: ```https://www.diigo.com/ditem_mana2/convert_mode```
+* HTTP method: POST
 
 - link_id: string with comma-separated list of link_ids
 - mode: <"0"|"1"|"2"> "0" for public, "1" for ?, "2" for private

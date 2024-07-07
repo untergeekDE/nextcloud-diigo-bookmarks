@@ -1,8 +1,8 @@
-# myconfig.py
+# config.py
 # 
 # Settings and absolute paths
 
-VERSION_STRING = "nextcloud-diigo-bookmarks V0.4.1 alpha"
+VERSION_STRING = "nextcloud-diigo-bookmarks V0.4.2 alpha"
 
 # Enables requests session logging to the terminal
 # LOG = 1

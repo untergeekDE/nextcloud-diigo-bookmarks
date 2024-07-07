@@ -1,4 +1,4 @@
-# Nextcloud/Diigo Bookmarks V0.4
+# Nextcloud/Diigo Bookmarks V0.4.2
 
 VERY PRE-ALPHA: Code to use the API of bookmarking service [Diigo](https://www.diigo.com) to rescue and eventually delete them, and to add, edit and improve bookmarks in the [Nextcloud Bookmarks](https://apps.nextcloud.com/apps/bookmarks) app. 
 
@@ -53,12 +53,9 @@ The program checks the credentials for Diigo and your Nextcloud installation, op
 
 ### Todo 
 
-- Take credentials 
-- Actual loop to add AI description
+- Routine to add AI description for all (unmarked) bookmarks
 - Tagging with AI
 - Reimport into Diigo (if only for further testing)
-- Reauthentication of Diigo
-- Logon to other Nextcloud
 - Tools submenu
 	- Comparison of Diigo and Nextcloud bookmarks
 	- Tags analysis
@@ -89,11 +86,10 @@ There are a couple of things the NC Bookmarks app does not do quite as well as D
 
 * **main.py**: A simple command-line app for executing functions. Run with ```python main.py``` (TODO)
 * **upload_bookmarks.py**: Upload .csv diigo bookmark dump file to Nextcloud 
-* **rework_sql_library.py**: A routine to import a SQL dump, and set the created_at field to the Diigo creation date saved in the description (TODO)
 
 ### Authentication
 
-The program looks in the ```.ncdbookmarks``` directory for credential files. If it doesn't find them, or they don't work, it asks for the credentials. 
+The program looks in the ```.ncdbookmarks``` directory for credentials for Diigo and Nextcloud. If it doesn't find them, or they don't work, it asks for the credentials. 
 
 * **To use Diigo**, the main routine will ask you to:
 	- create an API key [here](https://www.diigo.com/api_keys/new/)
@@ -102,11 +98,9 @@ The program looks in the ```.ncdbookmarks``` directory for credential files. If 
 
 * **To authenticate your Nextcloud bookmarks app**, you will have to suppy user and password
 
-The credits for Diigo and Nextcloud are saved in a YAML file at ```.ncdbookmarks/key.yaml```. You can modify the file directy. A sample file ```sample_key.yaml``` can be found in the project directory. 
+User and credentials for Diigo and Nextcloud are saved in a YAML file at ```.ncdbookmarks/key.yaml```. You can modify the file directy. A sample file ```sample_key.yaml``` can be found in the project directory. 
 
-Once the Diigo session is authenticated, the session cookies are saved to a YAML file at ```.ncdbookmarks/session_cookies.yaml```.
-
-As most of the heavy lifting on Diigo is now done via the Interaction API which does not need an API key, the requirement for a Diigo API key might actually be dropped. 
+The code uses session cookies to authenticate most API calls. Once the Diigo session is authenticated, the session cookies are saved to a YAML file at ```.ncdbookmarks/session_cookies.yaml```, where it can be used by the requests library. 
 
 ### Libraries and files: 
 
@@ -118,5 +112,5 @@ Hinting where you find the routines you may use for your own code
 
 * **config.py** contains global variables like filenames and paths
 
-Documentation dump on what the functions do, and on data formats, [can be found here](doc/code_doc.md).
-
+* Documentation dump on what the functions do, and on data formats, [can be found here](doc/code_doc.md).
+* My [findings and documentations of the Diigo API](doc/diigo_api.md)

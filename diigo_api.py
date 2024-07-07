@@ -55,7 +55,11 @@ def check_credentials_missing():
         print("No API key")
         return True
     return False
-    
+
+##############################################################
+# Routines using the official API (as documented in https://www.diigo.com/api_dev)
+
+# Get a chronological list of bookmarks, returned as a list of dicts
 def get_diigo_bookmarks(d_start = 0, d_count= 10, tags=""):
     if check_credentials_missing():
         return None
@@ -83,15 +87,19 @@ def get_diigo_bookmarks(d_start = 0, d_count= 10, tags=""):
         print(f"API Message: {response.text}")
         return None
 
+# Check whether API can be reached, and credentials are valid.
 def probe_diigo_api():
     if check_credentials_missing():
         return None
     r = get_diigo_bookmarks(d_start=0, d_count=1)
     if r != None: 
         print("OK - Can read Diigo bookmarks")
+        return True
     else:
         raise Exception("Diigo bookmarks inaccessible")
+        return False
 
+# Creates/overwrite a bookmark identified by URL and title
 def write_diigo_bookmark(title,url, # these are required, i.e. they ID the bookmark
                          shared=False,
                          tags="",
@@ -132,10 +140,17 @@ def write_diigo_bookmark(title,url, # these are required, i.e. they ID the bookm
         print(f"API Message: {response.text}")
         return None   
 
+# Delete a bookmark identified by URL and title. 
+#
+# The session parameter is actually a bit of superstition: I strongly believe that
+# the rate limit for the delete function is less severe if you are on a valid Diigo browser session.
+# 
+
 def delete_diigo_bookmark(title,url,session = None):
     # Experimental: Delete bookmark via API. The API description hints at it but does not
     # make this explicit. But it seems to work. 
-    # YET: Bulk-deleting bookmarks seems to overload the database, 
+    # YET: This method is rate-limited to some couple of dozen calls per ten minutes.
+    # And: deleting bookmarks in rapid succession seems to overload the database, 
     # getting a 400 error (internal server error) after some time.
     # In this case, wait and retry. 
     if check_credentials_missing():
@@ -167,6 +182,7 @@ def delete_diigo_bookmark(title,url,session = None):
         print(f"API Message: {response.text}")
         return None    
 
+#################################################
 ### Functions using the Diigo Interaction API ###
 
 # This is what is being used on the Diigo website; it needs you 
@@ -199,6 +215,7 @@ def probe_dia(session):
         print(f"{response.status_code} - {response.text}")
         return False
 
+# Get session cookies to use, either from disk, or from a browser session 
 def dia_session_authenticate():
     # Initialize the Selenium WebDriver (you may need to adjust this based on your browser)
     driver = webdriver.Firefox()  # Or webdriver.Firefox(), etc.
@@ -271,7 +288,41 @@ def dia_login(force_reauth = False):
     session.close()
     print("Failed to authenticate")
     return None
-    
+   
+# Returns a paginated list of bookmarks 
+# Pagination is determined by the page_num and count parameters: 
+# page_num=0, count=10 gives you bookmarks 1-10, page_num=2, count=20 gives you 41-60. 
+def dia_load_user_items(page_num=0,sort='updated',count=24, session=None):
+    # Set session cookie first by authenticating
+    global config
+    diigo_key = config['diigo']['apikey']
+    diigo_user = config['diigo']['user']
+    diigo_password = config['diigo']['password']
+    d_params = {
+        'page_num': page_num,
+        'sort': 'updated',
+        'count': count,
+    }
+    if session != None: 
+        response = session.get("https://www.diigo.com/interact_api/load_user_items",
+                            headers = auth_headers, 
+                            params = d_params,
+                            auth=(diigo_user, diigo_password),
+                            )
+    else:
+        print("No session")
+        return None
+    if response.status_code == 200:
+        try:
+            j = response.json()
+            return j['items']
+        except:
+            print("Failed to return JSON - probably no longer authenticated")
+            return None
+    else:
+        print(f"Failed to reach load_user_items.\nStatus code: {response.status_code}")
+        print(f"API gives this reason: {response.text}")
+        return None    
 
 # Returns a paginated list of bookmarks, filtered by "what" parameter 
 # Basically the same as dia_load_user_items.
@@ -310,42 +361,6 @@ def dia_search_user_items(what="",page_num=0,sort='updated',count=24, session=No
         print(f"API gives this reason: {response.text}")
         return None    
 
-# Returns a paginated list of bookmarks 
-# Pagination is determined by the page_num and count parameters: 
-# page_num=0, count=10 gives you bookmarks 1-10, page_num=2, count=20 gives you 41-60. 
-def dia_load_user_items(page_num=0,sort='updated',count=24, session=None):
-    # Set session cookie first by authenticating
-    global config
-    diigo_key = config['diigo']['apikey']
-    diigo_user = config['diigo']['user']
-    diigo_password = config['diigo']['password']
-    d_params = {
-        'page_num': page_num,
-        'sort': 'updated',
-        'count': count,
-    }
-    if session != None: 
-        response = session.get("https://www.diigo.com/interact_api/load_user_items",
-                            headers = auth_headers, 
-                            params = d_params,
-                            auth=(diigo_user, diigo_password),
-                            )
-    else:
-        print("No session")
-        return None
-    if response.status_code == 200:
-        try:
-            j = response.json()
-            return j['items']
-        except:
-            print("Failed to return JSON - probably no longer authenticated")
-            return None
-    else:
-        print(f"Failed to reach load_user_items.\nStatus code: {response.status_code}")
-        print(f"API gives this reason: {response.text}")
-        return None    
-
-
 def dia_get_id(page_num=0,sort='updated',count=24, session=None, what=""):
     # Return a list of numerical IDs
     if what != "":
@@ -355,6 +370,7 @@ def dia_get_id(page_num=0,sort='updated',count=24, session=None, what=""):
     id_list = [i['link_id'] for i in items]
     return id_list
 
+# Write, or overwrite, bookmark
 def dia_write(title,
               url, 
               description="",
@@ -413,6 +429,16 @@ def dia_write(title,
         print(f"API gives this reason: {response.text}")
         return None 
 
+############################################################
+# Bulk API
+
+# These function calls to manipulate bookmarks in bulk... they don't work. 
+# You can see them working on the Diigo site, but they only return a 403 Forbidden
+# status, and my guess is that they are only valid for calls from diigo.com. Bummer.
+
+# Bulk-change visibility of bookmarks
+#
+# The 'silent' parameter is used to suppress printing error messages and warnings
 def dia_change_mode_b(link_id, mode=2, session=None, silent = False):
     # Kill all bookmarks in the list (which may be either a real list,
     # or a string containing comma-separated values)
@@ -453,7 +479,7 @@ def dia_change_mode_b(link_id, mode=2, session=None, silent = False):
             print(f"API gives this reason: {response.text}")
         return response.status_code   
 
-
+# Bulk-delete a list of bookmarks
 def dia_delete_b(link_id, session=None):
     # Kill all bookmarks in the list (which may be either a real list,
     # or a string containing comma-separated values)
@@ -490,6 +516,7 @@ def dia_delete_b(link_id, session=None):
         print(f"API gives this reason: {response.text}")
         return response.status_code   
 
+###################################################################################
 ########## Test both APIs by writing, overwriting, listing, deleting bookmark #####
 
 def test_diigo_api(diigo_api = True, dia_api = True):
