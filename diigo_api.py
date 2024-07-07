@@ -359,8 +359,8 @@ def dia_write(title,
               url, 
               description="",
               new_url = "",
-              private = "false",
-              unread = "true",
+              private = "",
+              unread = "",
               link_id=None,
               session=None):
     # Kill all bookmarks in the list (which may be either a real list,
@@ -412,6 +412,47 @@ def dia_write(title,
         print(f"Failed to reach load_user_items.\nStatus code: {response.status_code}")
         print(f"API gives this reason: {response.text}")
         return None 
+
+def dia_change_mode_b(link_id, mode=2, session=None, silent = False):
+    # Kill all bookmarks in the list (which may be either a real list,
+    # or a string containing comma-separated values)
+    diigo_user = config['diigo']['user']
+    diigo_password = config['diigo']['password']
+    if type(link_id) == list: 
+        link_id = ','.join(map(str, link_id))
+    d_params = {
+        'link_id': link_id,
+        'mode': mode
+    }
+    # Try to augment headers
+    d_headers = auth_headers
+#    d_headers['Origin'] = 'https://www.diigo.com'
+#    d_headers['Referer'] = f'https://www.diigo.com/user/{diigo_user}?query=test'
+    if session != None: 
+        response = session.post("https://www.diigo.com/ditem_mana2/convert_mode",
+                            params = d_params,
+                            headers= d_headers,
+                            auth=(diigo_user, diigo_password),
+                            )
+    else:
+        if not silent:
+            print("No Session")
+            return None
+    if response.status_code == 200:
+        try:
+            j = json.loads(response.text)
+            return j
+        except:
+            # Presumably, no json return value
+            if not silent:
+                print("Returned non-JSON value; wrong parameters?")
+            return response.status_code
+    else:
+        if not silent:
+            print(f"Failed to execute change_mode_b.\nStatus code: {response.status_code}")
+            print(f"API gives this reason: {response.text}")
+        return response.status_code   
+
 
 def dia_delete_b(link_id, session=None):
     # Kill all bookmarks in the list (which may be either a real list,
@@ -489,8 +530,54 @@ def test_diigo_api(diigo_api = True, dia_api = True):
             print("Deleted test bookmark")
         session.close()
     
-### Export, recreate, and remove bookmarks via Interaction API
+### Make private, export, recreate, and remove bookmarks via Interaction API
 
+# Set all bookmarks to private
+def dia_privatize():
+    # Login
+    session = dia_login()
+    p = 0
+    n = 0
+    diigo_batch_size = config['diigo_batch_size']
+    # Step through Diigo bookmarks in batches of diigo_batch_size = 100.
+    print(f"Processing in batches of {diigo_batch_size}") 
+    print("Batch progress: (.) Reading (-) Changing (*) Done")
+    items = dia_load_user_items(page_num=p,
+                                sort = 'created_at',
+                                count= diigo_batch_size,    # defined in config.py
+                                session = session)
+    while len(items) > 0:
+        print(".",end = "")
+        # If existing bookmark file is found, move to .bak
+        # Tends to contain empty lists; convert these to strings        
+        # Overwrite bookmarks as private
+        """ OBSOLETE: Overwrite each single bookmark - far too slow
+        """
+        # Bulk-change 
+        list_id = [i['link_id'] for i in items]
+        response = dia_change_mode_b(list_id,mode="2",session=session,silent=True)
+        if response == 403:
+            # Seems like we cannot bulk-delete from another IP; go for slow but reliable:
+            # Overwrite every single bookmark
+            for i in items:
+                print("\b-",end="")
+                response = dia_write(title=i['title'],
+                                        url=i['url'],
+                                        link_id=i['link_id'],
+                                        private="true",
+                                        session=session)
+                if response:
+                    print("\b.",end="")
+                    n+=1
+            else:
+                n += p
+        print("\b*")
+        p+=1
+    print(f"Set {n} bookmarks to private")
+    session.close()    
+    return True
+
+# 
 def dia_export_delete(create_nextcloud = False,
                       remove_diigo = False,
                       use_llm = False):
@@ -570,14 +657,14 @@ def dia_export_delete(create_nextcloud = False,
                     url = i['url']
                     print(f"Trying force-delete {url} {title}")
                     response = delete_diigo_bookmark(title=title,url=url,session = session)
-                    print("Response: {response}")
+                    print(f"Response: {response}")
                     while (response == None):
                         print("Waiting 5 minutes for retry")
                         time.sleep(300)
                         response = delete_diigo_bookmark(title=title,url=url,session = session)
                     
-                    # Wait 5 seconds 
-                    time.sleep(5)
+                    # Wait 2 seconds 
+                    time.sleep(2)
             
         else: 
             # No bookmarks have been removed, so we have to go to the next page. 

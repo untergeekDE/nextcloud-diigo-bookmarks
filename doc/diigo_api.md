@@ -92,7 +92,7 @@ Responds with a json stating success. Contents are not really that valuable.
 
 Undocumented method to delete a bookmark via a CURL DELETE call. Bookmark to delete is identified by URL and title. 
 
-Heavily rate-limited. 
+Heavily rate-limited. It seems to work if you run it in an authenticated session, and with a short delay after each delete (I tried 5 seconds)
 
 Responds with a json stating success. Contents are not really that valuable.
 
@@ -127,6 +127,7 @@ Known commands:
 * **load_user_items**
 * **search_user_items**
 * **load_user_tags**
+* **bookmark** 
 
 * **load_user_info**
 * **load_user_groups**
@@ -137,6 +138,7 @@ Known commands:
 
 Get a list of bookmarks, sorted by the API. 
 Endpoing: ```https://www.diigo.com/interact_api/```
+HTTP method: GET
 
 Parameters (via a params dictionary):
 - page_num: offset (default = 0), negative values are allowed
@@ -188,6 +190,8 @@ Sample output:
 
 Get a list of bookmarks filtered by the "What" parameter (which seems to filter for title)
 Endpoint: ```https://www.diigo.com/interact_api/search_user_items````
+HTTP method: GET
+
 
 Basically the same as ```load_user_items``` but with filtering by the 'what' parameter. That seems to look through title, url, and description - same as in the webui - and isn't very good. Other parameters are the same as load_user_items
 
@@ -199,9 +203,30 @@ Parameters:
 
 ### ```load_user_tags``` - Get a dict of all tags with the frequency of their use
 
-## The Management API - same as Interaction API but...
+### ```bookmark```- (POST) Create a bookmark
 
-Creating, modifiying, and deleting, is done by yet another set of API commands. >ou can see it at work loading the Diigo website with the browser tools opened, looking at the Network tab; but authentication is a bit trickier. 
+Creates/Overwrites a bookmark
+Endpoint: ```https:///www.diigo.com/item/save/bookmark```
+HTTP Method: POST
+
+- title
+- url
+- link_id: str (identifies existing bookmark - see below)
+- description: str (optional)
+- new_url: str (when editing bookmark)
+- private: <'true'|'false'> (optional)
+- unread: <'true'|'false'> (optional)
+- lists: str (optional)
+- group: str (optional)
+
+Creates a new bookmark, or overwrite existing bookmark. Check whether bookmark exists seems to work link_id but also via URL/title (you can overwrite without a link_id). 
+
+Returns a HTML page rather than a JSON but seems to work regardless. 
+
+
+## The Bulk Management API - same as Interaction API but...
+
+Creating, modifiying, and deleting, is done by yet another set of API commands. You can see it at work loading the Diigo website with the browser tools opened, looking at the Network tab; but authentication seems not to work. Maybe it is only accepted when coming from the Diigo.com website - must check. 
 
 * End points: ```https://www.diigo.com/ditem_mana2/```, ```https:///www.diigo.com/item/save/bookmark```
 * Authentication: HTTP Basic, session cookies, user agent
@@ -210,25 +235,8 @@ Creating, modifiying, and deleting, is done by yet another set of API commands. 
 
 These commands are known. 
 * **delete_b** (POST) -- DOES NOT WORK YET
-* **bookmark** (POST)
 * **mark_readed** (POST) Read/unread
 * **convert_mode** (POST) Private/Public
-
-### ```bookmark```- (POST) Create a bookmark
-
-Creates/Overwrites a bookmark
-Endpoint: ```https:///www.diigo.com/item/save/bookmark```
-
-- title
-- url
-- link_id: str (identifies existing bookmark; leave out if creating a new bookmark)
-(Might be used to identify bookmarks; they are)
-- description: str
-- new_url: str (when editing bookmark)
-- private: <'true'|'false'>
-- unread: <'true'|'false'>
-- lists: str
-- group: str
 
 
 ### ```delete_b``` (POST) - Remove all bookmarks in a list
@@ -270,4 +278,4 @@ Endpoint: ```https://www.diigo.com/ditem_mana2/convert_mode```
 
 
 - link_id: string with comma-separated list of link_ids
-- mode: <"0"|"1"> "0" for public, "1" for private
+- mode: <"0"|"1"|"2"> "0" for public, "1" for ?, "2" for private

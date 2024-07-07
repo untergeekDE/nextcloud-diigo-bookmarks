@@ -14,7 +14,7 @@ from config import *
 from config_lib import get_config, write_config, setup_config_dir
 from process import tag_process, convert_to_dict
 from nc_bookmarks_api import probe_nc_bookmarks, probe_nc_bookmarks_url
-from diigo_api import dia_login, probe_dia, dia_export_delete
+from diigo_api import dia_login, probe_dia, dia_export_delete, dia_privatize
 from diigo_api import probe_diigo_api, probe_dia
 from datetime import datetime
 
@@ -89,37 +89,33 @@ if __name__ == "__main__":
     main_menu = ConsoleMenu("Main Menu", "So what do you wish to do now?")
     ### Submenu: Diigo
     diigo_menu = ConsoleMenu("Diigo Menu", "Get and remove your Diigo bookmarks")
-    function_item1 = FunctionItem("Export Diigo bookmarks to file", 
+    diigo_menu.append_item(FunctionItem("Set all Diigo bookmarks to private", 
+                                  dia_privatize))
+    diigo_menu.append_item(FunctionItem("Export Diigo bookmarks to file", 
                                   dia_export_delete,
                                   kwargs={"remove_diigo":False,
                                           "use_llm":False,
-                                          "create_nextcloud":False})
-
-    function_item2 = FunctionItem("Export and remove bookmarks from Diigo",
+                                          "create_nextcloud":False}))
+    diigo_menu.append_item(FunctionItem("Export and remove bookmarks from Diigo",
                                   dia_export_delete,
                                   kwargs={"remove_diigo":True,
                                           "use_llm":False,
-                                          "create_nextcloud":False})
-    function_item3 = FunctionItem("Recreate Diigo bookmarks in Nextcloud", 
+                                          "create_nextcloud":False}))
+    diigo_menu.append_item(FunctionItem("Recreate Diigo bookmarks in Nextcloud", 
                                   dia_export_delete,
                                   kwargs={"remove_diigo":False,
                                           "use_llm":False,
-                                          "create_nextcloud":True})
-    function_item4 = FunctionItem("Recreate Diigo bookmarks in Nextcloud using AI to improve descriptions",
+                                          "create_nextcloud":True}))
+    diigo_menu.append_item(FunctionItem("Recreate Diigo bookmarks in Nextcloud using AI to improve descriptions",
                                   dia_export_delete,
                                   kwargs={"remove_diigo":False,
                                           "use_llm":True,
-                                          "create_nextcloud":True})
-    function_item5 = FunctionItem("Full Service: Export, remove, and create in Nextcloud, improving with AI",
+                                          "create_nextcloud":True}))
+    diigo_menu.append_item(FunctionItem("Full Service: Export, remove, and create in Nextcloud, improving with AI",
                                   dia_export_delete,
                                   kwargs={"remove_diigo":True,
                                           "use_llm":True,
-                                          "create_nextcloud":True})
-    diigo_menu.append_item(function_item1)
-    diigo_menu.append_item(function_item2)
-    diigo_menu.append_item(function_item3)
-    diigo_menu.append_item(function_item4)
-    diigo_menu.append_item(function_item5)
+                                          "create_nextcloud":True}))
     diigo_menu.append_item(FunctionItem("Inspect dump file(s)", inspect_dump_csv_files, [config['dump_path']]))
     ### Sub-Menu: Nextcloud
     nc_menu_text="""Export, import, and improve the Nextcloud bookmarks
