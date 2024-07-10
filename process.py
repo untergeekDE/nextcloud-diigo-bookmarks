@@ -108,7 +108,7 @@ def suggest_description(url,description = ""):
         title = soup.find('title').string
         main_content = soup.get_text()
                 
-        # Generate a summary using the Aya model
+        # Generate a summary using the Gemma2 model
         sys_p = summarize_prompt
         summary_string = f"""
         URL: {url}
@@ -127,7 +127,7 @@ def suggest_description(url,description = ""):
         }]
         options = {'temperature':0.3}
         try:
-            llm_response = ollama.chat(model='aya', 
+            llm_response = ollama.chat(model=config['ollama']['model'], 
                                        messages=messages,
                                        options=options)
             return llm_response['message']['content']

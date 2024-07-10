@@ -250,7 +250,7 @@ Returns a HTML page rather than a JSON but seems to work regardless.
 
 ## The Bulk Management API - same as Interaction API but...
 
-Bulk modifiying, and deleting, is done by yet another set of API commands. You can see it at work loading the Diigo website with the browser tools opened, looking at the Network tab; but authentication does not seem to work as with the Interaction API. Maybe it is only accepted when coming from the Diigo.com website - must check. 
+Bulk modifiying, and deleting, is done by yet another set of API commands. You can see it at work loading the Diigo website with the browser tools opened, looking at the Network tab; but authentication does not seem to work as with the Interaction API. Maybe it is only accepted when coming from the Diigo.com website - must check. If that really is true, the fastest way to perform bulk management of bookmarks would be a Selenium session initiating a select/delete process via Selenium or Puppeteer.
 
 * Endpoint: ```https://www.diigo.com/ditem_mana2/```
 * Authentication: HTTP Basic, session cookies, user agent, ?

@@ -14,3 +14,10 @@
 from nc_bookmarks_api import edit_nc_bookmark, 
 
 from config import *
+
+if __name__ == "__main__":
+    if not probe_nc_bookmarks():
+        print("Returning.")
+    
+    print()
+    input("Done - press ENTER to return")

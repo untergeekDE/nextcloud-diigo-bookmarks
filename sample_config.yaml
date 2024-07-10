@@ -10,10 +10,11 @@ nc_bookmarks:
   
 auth_timestamp:
 
-dump_path: "../data/diigo_dump.csv"
+diigo_dump_path: "../data/diigo_dump.csv"
+nc_dump_path: "../data/nc_dump.csv"
 
 diigo_batch_size: 100
-nc_batch_size": 100
+nc_batch_size: 100
 
 ollama: 
   model: "gemma2:9b" 

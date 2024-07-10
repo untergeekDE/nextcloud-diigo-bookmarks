@@ -18,7 +18,11 @@ def set_f(f):
     filename = f
     return f
 
-def file_menu(path,extension):
+# Command-line file select box 
+# Displays menu_string, starts from given path, scans for extension
+#
+# Returns path to selected file, or last directory, if no file is selected
+def file_menu(menu_string,path,extension):
     while True:
         if path[0] == '~':
             path = os.path.expanduser(path)
@@ -39,8 +43,8 @@ def file_menu(path,extension):
         for f in files: 
             menu_list.append(f)
         selection = SelectionMenu.get_selection(menu_list,
-                                                "Select a file or directory",
-                                                f"{dir}")
+                                                menu_string,
+                                                f"Select file or directory from {dir}")
         # Home Directory selected?
         if selection == 0:
             path = "~/dummy.txt"
@@ -48,7 +52,7 @@ def file_menu(path,extension):
             path = os.path.join(dir,"../dummy.txt")
         elif selection == len(menu_list):
             # Exit option - No file selected
-            return None
+            return dir
         elif selection > len(directories)+1:
             # File selected
             s = selection - len(directories) - 2
@@ -57,11 +61,21 @@ def file_menu(path,extension):
             # Continue while loop but with different directory
             path = os.path.join(dir, directories[selection-2]+"/.")
 
+# Simple Proceed/Abort menu
+def proceed(text):
+     menu_list = ['Proceed','Return to previous selection','Abort']
+     selection = SelectionMenu.get_selection(menu_list,
+                                                text,
+                                                "Proceed, try again, abort?",
+                                                show_exit_option=False)
+     return selection 
 
 # Short demo of the file selector box as a TXT viewer: 
 if __name__ == "__main__":
-    f = file_menu(".",".txt")
-    if f:
+    f = file_menu("Select .txt file to display",".",".txt")
+    if os.path.isdir(f):
+        print(f"No file selected. Returned from directory {f}")
+    else:
         print(f"Dumping file 'f':")
         with open(f, 'r') as file:
             for i, line in enumerate(file):
@@ -69,6 +83,5 @@ if __name__ == "__main__":
                 if i % 10 == 0:
                     input("")
         print('----EOF----')
-    else:
-        print("No file selected.")
+        input("Press ENTER to exit")
 

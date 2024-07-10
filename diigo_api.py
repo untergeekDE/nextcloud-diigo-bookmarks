@@ -16,8 +16,7 @@ from http.client import HTTPConnection
 
 
 from config import *
-from config_lib import get_config, write_config
-from import_csv import update_bookmarks, move_backup, inspect_file
+from import_export import update_bookmarks, move_backup, inspect_file
 from process import refactor_diigo_bookmark, suggest_description, suggest_tags
 from nc_bookmarks_api import edit_nc_bookmark, get_nc_folder
     
@@ -76,7 +75,7 @@ def get_diigo_bookmarks(d_start = 0, d_count= 10, tags=""):
         d_params['count'] = d_count
     response = requests.get(f"{diigo_url}bookmarks",
                             params = d_params,
-                            headers= auth_headers,
+                            headers= AUTH_HEADERS,
                             auth=(config['diigo']['user'], config['diigo']['password']),
                             )
     if response.status_code == 200:
@@ -129,7 +128,7 @@ def write_diigo_bookmark(title,url, # these are required, i.e. they ID the bookm
     }
     response = requests.post(f"{diigo_url}bookmarks",
                             params = d_params,
-                            headers= auth_headers,
+                            headers= AUTH_HEADERS,
                             auth=(config['diigo']['user'], config['diigo']['password']),
                             )
     if response.status_code == 200:
@@ -167,13 +166,13 @@ def delete_diigo_bookmark(title,url,session = None):
     if session == None: 
         response = requests.delete(f"{diigo_url}bookmarks",
                                 params = d_params,
-                                headers= auth_headers,
+                                headers= AUTH_HEADERS,
                                 auth=(diigo_user,diigo_password),
                                 )
     else: 
         response = session.delete("https://secure.diigo.com/api/v2/bookmarks",
                                   params = d_params,
-                                  headers = auth_headers,
+                                  headers = AUTH_HEADERS,
                                   auth = (diigo_user,diigo_password))
     if response.status_code == 200:
         return response.json()
@@ -198,7 +197,7 @@ def probe_dia(session):
     user = config['diigo']['user']    
     password = config['diigo']['password']
     response = session.get("https://www.diigo.com/interact_api/load_user_items",
-                            headers = auth_headers,
+                            headers = AUTH_HEADERS,
                             params = {'page_num':0,
                                       'count':1},
                             auth=(user, password),
@@ -241,7 +240,7 @@ def dia_session_authenticate():
     finally:
         # Close the browser
         driver.quit()   
-    write_config(session_path,session_cookies)
+    write_config(SESSION_PATH,session_cookies)
     return session_cookies
                             
 # Check where a session_cookies.yaml file can be found and used. 
@@ -252,7 +251,7 @@ def dia_session_authenticate():
 # the newfound cookies, and save them. 
 def dia_login(force_reauth = False): 
     global config
-    config = get_config(config_path)
+    config = get_config(CONFIG_PATH)
     # Enable debugging at HTTPConnection level
     if LOG == 1: 
         HTTPConnection.debuglevel = 1
@@ -264,7 +263,7 @@ def dia_login(force_reauth = False):
         requests_log.propagate = True
 
     if not force_reauth:
-        session_cookies = get_config(session_path)
+        session_cookies = get_yaml(SESSION_PATH)
         if session_cookies != None:
             # Read session cookies successfully, start
             # requests session, and try to probe it
@@ -305,7 +304,7 @@ def dia_load_user_items(page_num=0,sort='updated',count=24, session=None):
     }
     if session != None: 
         response = session.get("https://www.diigo.com/interact_api/load_user_items",
-                            headers = auth_headers, 
+                            headers = AUTH_HEADERS, 
                             params = d_params,
                             auth=(diigo_user, diigo_password),
                             )
@@ -342,7 +341,7 @@ def dia_search_user_items(what="",page_num=0,sort='updated',count=24, session=No
     }
     if session != None: 
         response = session.get("https://www.diigo.com/interact_api/search_user_items",
-                            headers = auth_headers, 
+                            headers = AUTH_HEADERS, 
                             params = d_params,
                             auth=(diigo_user, diigo_password),
                             )
@@ -400,7 +399,7 @@ def dia_write(title,
         d_params['private'] = private
     if unread != "":
         d_params['unread'] = unread
-    d_headers = auth_headers
+    d_headers = AUTH_HEADERS
     d_headers['Origin'] = 'https://www.diigo.com'
     d_headers['Referer'] = f'https://www.diigo.com/user/{diigo_user}?query=test'
 
@@ -451,7 +450,7 @@ def dia_change_mode_b(link_id, mode=2, session=None, silent = False):
         'mode': mode
     }
     # Try to augment headers
-    d_headers = auth_headers
+    d_headers = AUTH_HEADERS
 #    d_headers['Origin'] = 'https://www.diigo.com'
 #    d_headers['Referer'] = f'https://www.diigo.com/user/{diigo_user}?query=test'
     if session != None: 
@@ -491,7 +490,7 @@ def dia_delete_b(link_id, session=None):
         'link_id': link_id
     }
     # Try to augment headers
-    d_headers = auth_headers
+    d_headers = AUTH_HEADERS
     d_headers['Origin'] = 'https://www.diigo.com'
     d_headers['Referer'] = f'https://www.diigo.com/user/{diigo_user}?query=test'
     if session != None: 
@@ -524,7 +523,7 @@ def test_diigo_api(diigo_api = True, dia_api = True):
     # filtering by tag does not seem to work though. 
     global config
     print("Getting credentials from disk")
-    config = get_config(config_path)
+    config = get_config(CONFIG_PATH)
     if diigo_api:    
         print(get_diigo_bookmarks())
         # Write demo bookmark using the regular API
@@ -539,12 +538,16 @@ def test_diigo_api(diigo_api = True, dia_api = True):
         # Start a session for the interaction API; login and authenticate
         session = dia_login()
         test = dia_load_user_items(session = session)
-        print("Found first: ", test[0]['url'],test[0]['title'])
-        
+        if len(test) > 0:
+            print("Found first: ", test[0]['url'],test[0]['title'])
+        else:
+            print("No bookmarks found")
+        #       test = dia_delete_b("749192573", session = session)
+        print("Creating bookmark test07")
+        dia_write(title="Test07", url="https://untergeek.de/test", description = "A test.", session=session)
         test = dia_search_user_items(what="test",session = session)
         print("Found first: ", test[0]['url'],test[0]['title'],"with ID",test[0]['link_id'])
-        test = dia_delete_b("749192573", session = session)
-        dia_write(title="Test07", url="https://untergeek.de/test", description = "A test.", session=session)
+
         print("Trying update: retrieving link_id")
         hit_list = dia_get_id(what="test07", session = session)
         dia_write(title="Nomnomnom", url="https://janeggers.tech", link_id=hit_list, session=session)
@@ -616,7 +619,7 @@ def dia_export_delete(create_nextcloud = False,
         unreachable_folder = get_nc_folder(UNREACHABLE_FOLDER)
     # Login
     session = dia_login()
-    move_backup(config['dump_path'])
+    move_backup(config['diigo_dump_path'])
     p = 0
     diigo_batch_size = config['diigo_batch_size']
     # Step through Diigo bookmarks in batches of diigo_batch_size = 100.
@@ -633,40 +636,36 @@ def dia_export_delete(create_nextcloud = False,
         df = pd.DataFrame(items)
         # If existing bookmark file is found, move to .bak
         # Tends to contain empty lists; convert these to strings        
-        update_bookmarks(config['dump_path'],df)
+        update_bookmarks(config['diigo_dump_path'],df)
 
         # Create Nextcloud Bookmarks if necessary here
         if create_nextcloud: 
             for i in items:
                 print("\b^",end="")
-                folder = [diigo_folder] 
+                folders = [diigo_folder] 
                 if i['readed'] == 0:
-                    folder.append(unread_folder)
+                    folders.append(unread_folder)
                 if not i['private']: # Yes, it's private if False!
-                    folder.append(private_folder)
+                    folders.append(private_folder)
                 bookmark_data = refactor_diigo_bookmark(url = i['url'],
                                                         title = i['title'],
                                                         description = i['description'],
                                                         annotations = i['annotations'],
                                                         comments = 'comments',
-                                                        created_at = i['created_at'],
-                                                        folder = folder)
+                                                        created_at = i['created_at']
+                                                        )
+                # Assign folders to NC bookmark
+                bookmark_data['folders'] = folders
                 # create bookmark
                 # Use LLM
                 if use_llm:
                     print("\b@",end="")                 
-                    llm_d = suggest_description(bookmark_data['description'])
+                    llm_d = suggest_description(bookmark_data['url'],
+                                                bookmark_data['description'])
                     if llm_d == None: 
-                        folder.append(unreachable_folder)
+                        folders.append(unreachable_folder)
                     else:
-                        bookmark_data = refactor_diigo_bookmark(url = i['url'],
-                                        title = i['title'],
-                                        description = i['description'],
-                                        annotations = i['annotations'],
-                                        comments = 'comments',
-                                        created_at = i['created_at'],
-                                        folder = folder,
-                                        llm=llm_d)
+                        bookmark_data['description'] = bookmark_data['description'].replace('###LLM###', llm_d)
                     # TODO: Add tagging
                 edit_nc_bookmark(bookmark_data)
                 print("\b*",end="")
@@ -705,8 +704,8 @@ def dia_export_delete(create_nextcloud = False,
     # Erase the last read symbol and erase
     print("\b \n")     
     session.close()
-    df = inspect_file(config['dump_path'])
-    input("Press ENTER to return to menu")
+    df = inspect_file(config['diigo_dump_path'])
+    # Shows file and waits for ENTER
     
 
 ### Export and remove bookmarks via official API (SLOW) ### 
@@ -716,8 +715,8 @@ def diigo_export_delete():
     probe_diigo_api()
     # probe_dia()
     print(f"Greetings. Downloading and destroying all Diigo bookmarks for user {config['diigo']['user']}")
-    diigo_dump_path = config['dump_path'] # "../data/diigo_dump.csv"
-    print(f"Will create a file named '{config['dump_path']}' with all bookmarks, then erase them via the API.")
+    diigo_dump_path = config['diigo_dump_path'] # "../data/diigo_dump.csv"
+    print(f"Will create a file named '{config['diigo_dump_path']}' with all bookmarks, then erase them via the API.")
     print("Proceeding in steps of 10 in case the procedure fails.")
     #    input("Proceed? Ctrl-C to abort, press return to start.")
     i = 0 
@@ -727,7 +726,7 @@ def diigo_export_delete():
     while len(d_b_dict) > 0:
         df = pd.DataFrame(d_b_dict)
         # Drop unwanted columns, keep only those in the list
-        df = df[diigo_fields_list]
+        df = df[DIIGO_FIELDS_LIST]
         # Tends to contain empty lists; convert these to strings
         df = df.apply(lambda col: col.apply(lambda x: '' if isinstance(x, list) else x))
 

@@ -4,7 +4,6 @@ import requests
 import pandas as pd
 
 from config import *
-from config_lib import get_nc_key
 
 # Is there a Nextcloud at the URL?
 def probe_nc_bookmarks_url(nc_url=None):
@@ -35,6 +34,10 @@ def probe_nc_bookmarks_url(nc_url=None):
 # 
 # Needs user and password in config dictionary
 def probe_nc_bookmarks():
+    nc_url = config['nc_bookmarks']['url']
+    if nc_url == "": 
+        print("No Nextcloud instance selected")
+        return False
     if config['nc_bookmarks']['user'] + config['nc_bookmarks']['password'] == "":
         print("nc_bookmarks user/password not set")
         return False
@@ -63,7 +66,7 @@ def create_nc_bookmark(url,
     }
     
     response = requests.post(f"{config['nc_bookmarks']['nc_url']}/index.php/apps/bookmarks/public/rest/v2/bookmark",
-                             headers= auth_headers,
+                             headers= AUTH_HEADERS,
                              json=bookmark_data,
                              auth=(config['nc_bookmarks']['user'],config['nc_bookmarks']['password']))
     
@@ -81,12 +84,12 @@ def create_nc_bookmark(url,
 # If no ID is given, create from scratch. (NC Bookmarks might overwrite existing bookmarks.)
 def edit_nc_bookmark(data,id=None):
     bookmark_data = data
-    api_url = f"{config['nc_bookmarks']['nc_url']}/index.php/apps/bookmarks/public/rest/v2/bookmark"
+    api_url = f"{config['nc_bookmarks']['nc_url']}index.php/apps/bookmarks/public/rest/v2/bookmark"
     # Is there an ID? If yes, add to API call. 
     if id != None:
         api_url += f"/{id}"
-    response = requests.put(api_url,
-                             headers= auth_headers,
+    response = requests.post(api_url,
+                             headers= AUTH_HEADERS,
                              json=bookmark_data,
                              auth=(config['nc_bookmarks']['user'],config['nc_bookmarks']['password']))
     
@@ -123,7 +126,7 @@ def get_nc_bookmarks(page = 0,
 
     Returns a list of dicts containing the bookmarks - with ID!
     """
-    global config
+    config = get_config(CONFIG_PATH)
     bookmark_data = {
         'page': page,
         'limit': limit,
@@ -136,7 +139,7 @@ def get_nc_bookmarks(page = 0,
         bookmark_data['folder'] = folder
     # Ignore URL for the time being. 
     response = requests.get(f"{config['nc_bookmarks']['nc_url']}/index.php/apps/bookmarks/public/rest/v2/bookmark",
-                            headers= auth_headers,
+                            headers= AUTH_HEADERS,
                             json=bookmark_data,
                             auth=(config['nc_bookmarks']['user'],
                                   config['nc_bookmarks']['password']))
@@ -159,7 +162,7 @@ def find_nc_bookmark(url,folder_id=-1):
         "folder": folder_id,
     }
     response = requests.get(f"{config['nc_bookmarks']['nc_url']}/index.php/apps/bookmarks/public/rest/v2/bookmark",
-                            headers= auth_headers,
+                            headers= AUTH_HEADERS,
                             json=bookmark_data,
                             auth=(config['nc_bookmarks']['user'],
                                   config['nc_bookmarks']['password']))
@@ -179,18 +182,6 @@ def check_nc_bookmark(url):
     return len(d)==1
 
 
-def get_nc_dump():
-    df = pd.DataFrame()
-    p = 0
-    nc_batch_size = config['nc_batch_size']
-    data = get_nc_bookmarks(page = 0, limit = nc_batch_size)
-    while len(data) > 0: 
-        b_df = pd.DataFrame(data)
-        df =  pd.concat([df, b_df], ignore_index=True)   
-        p += 1
-        data = get_nc_bookmarks(page = 0, limit = nc_batch_size)
-    return df
-
 
 ########### Folders ##############
 
@@ -201,7 +192,7 @@ def get_nc_folders():
         "root": -1
     }
     response = requests.get(f"{config['nc_bookmarks']['nc_url']}/index.php/apps/bookmarks/public/rest/v2/folder",
-                            headers= auth_headers,
+                            headers= AUTH_HEADERS,
                             json=bookmark_data,
                             auth=(config['nc_bookmarks']['user'],
                                   config['nc_bookmarks']['password']))
@@ -223,7 +214,7 @@ def create_nc_folder(name, parent =-1):
         # "parent_folder": parent
     }
     response = requests.post(f"{config['nc_bookmarks']['nc_url']}/index.php/apps/bookmarks/public/rest/v2/folder",
-                            headers= auth_headers,
+                            headers= AUTH_HEADERS,
                             json=folder_data,
                             auth=(config['nc_bookmarks']['user'],
                                   config['nc_bookmarks']['password']))
@@ -263,3 +254,7 @@ def get_nc_folder(name):
 
 def get_nc_diigo_folder():
     return get_nc_folder("DIIGO")
+
+
+############### Functions ###################
+

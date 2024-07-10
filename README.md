@@ -1,4 +1,4 @@
-# Nextcloud/Diigo Bookmarks V0.4.2
+# Nextcloud/Diigo Bookmarks V0.5
 
 VERY PRE-ALPHA: Code to use the API of bookmarking service [Diigo](https://www.diigo.com) to rescue and eventually delete them, and to add, edit and improve bookmarks in the [Nextcloud Bookmarks](https://apps.nextcloud.com/apps/bookmarks) app. 
 
@@ -85,7 +85,7 @@ There are a couple of things the NC Bookmarks app does not do quite as well as D
 ## Main app and libraries
 
 * **main.py**: A simple command-line app for executing functions. Run with ```python main.py``` (TODO)
-* **upload_bookmarks.py**: Upload .csv diigo bookmark dump file to Nextcloud 
+* **import_export.py**: Upload .csv diigo bookmark dump file to Nextcloud 
 
 ### Authentication
 
@@ -108,9 +108,9 @@ Hinting where you find the routines you may use for your own code
 * **nc_bookmarks_api.py**: Routines to manipulate bookmarks in the NC Bookmarks app
 * **process.py**: Routines to evaluate tags, to check on URLs, and to generate descriptions and tags with AI. 
 * **diigo_maintenance.py**: Routines to access Diigo via the official or the interaction API, and a routine to export and destroy the Diigo bookmarks. (I know there is an exporter in Diigo, but I guess it is a good idea to keep a dump anyway). 
-* **import_csv.py** has a function that upload_bookmarks.py uses to read the Diigo bookmarks file (and details on that file's format) 
+* **import_export.py** h
 
-* **config.py** contains global variables like filenames and paths
+* **config.py** contains global constants as well as a global variable and code for handling it
 
 * Documentation dump on what the functions do, and on data formats, [can be found here](doc/code_doc.md).
 * My [findings and documentations of the Diigo API](doc/diigo_api.md)

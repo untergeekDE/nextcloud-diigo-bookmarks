@@ -7,16 +7,13 @@ Overview on what the code does where.
 ## Libraries and functions
 
 - **main.py** gives you the menu that calls functions for diigo and nextcloud - the main routine
-- **config.py** contains global parameters, settings, and prompts
-
-- **config_lib.py** contains routines for reading and writing the YAML files that contain user credits and session cookies
+- **config.py** contains global constants, settings, and prompts, as well as the global config variable and routines for reading and writing the YAML files that contain user credits and session cookies
 - **diigo_api.py** contains functions for talking to Diigo. Called with ```python diigo_api.py```, the script performs a test of the API by writing, retrieving, and deleting a bookmark via both the official API and the interaction API. 
 - **file_menu.py** is a subroutine for a text-based file selector menu. Called with ```python file_menu.py```, a demo routine for selecting and displaying a .txt file is performed.
-- **import_csv.py** contains functions to read and write CSVs containing bookmarks, and moving them to a backup, and displaying them
+- **import_export.py** contains functions to read and write CSVs containing bookmarks, and moving them to a backup, and displaying them, as well as a legacy standalone routine to upload a CSV with Diigo bookmarks to Nextcloud. 
 - **nc_bookmarks_api.py** contains functions for reading and manipulating Nextcloud bookmarks and folders
 - **nc_llm_improve** is, as of now, empty - it is supposed to contain a stand-alone routine to look at the bookmarks in a Nextcloud installation, and improve descriptions and bookmarks with an AI language model. 
 - **process.py** contains routines to process tags and descriptions. AI prompting to suggest descriptions and tags happens here, as well as basic stuff like counting tags, and selecting the better of two descriptions (easy: pick the longer one).
-- **upload_bookmarks.py** is a legacy standalone routine to upload a CSV with Diigo bookmarks to Nextcloud. 
 
 ### ```config.py``` - Global parameters, settings and prompts
 
@@ -25,11 +22,11 @@ Most of the settings for the code are kept in a global dict variable named ```co
 - VERSION_STRING = "nextcloud-diigo-bookmarks V0.4.1 alpha"
 - LOG = 0 (set to 1 to log diigo API requests to the console for debugging)
 - diigo_url = "https://secure.diigo.com/api/v2/"
-- config_path = "~/.ncdbookmarks/config.yaml" (Location of config file)
-- sample_config_path = "./sample_config.yaml" (Location of sample config file)
-- session_path = "~/.ncdbookmarks/session_cookies.yaml" (location of session cookies file)
+- CONFIG_PATH = "~/.ncdbookmarks/config.yaml" (Location of config file)
+- SAMPLE_CONFIG_PATH = "./sample_config.yaml" (Location of sample config file)
+- SESSION_PATH = "~/.ncdbookmarks/session_cookies.yaml" (location of session cookies file)
 
-- b_path (hard-coded path to a bookmarks CSV to upload in upload_bookmarks.py)
+- b_path (hard-coded path to a bookmarks CSV to upload in import_export.py)
 - tags_path (hard-coded path to save tags)
 
 Folder names: 
@@ -88,6 +85,10 @@ Function calls to bulk-manipulate bookmarks, saving you a hundred single functio
 - **dia_export_delete** gets all bookmarks from the Diigo account, saves them to a CSV dump file, creates them in Nextcloud if wanted, and removes them from Diigo. 
 - **diigo_export_delete** tries to get/save bookmarks and delete them via the official API only. Dead slow and error-prone. 
 
+# The functions by library file
+
+...and I learned a lot about refactoring and global variables in the process. 
+
 ## nc_bookmarks_api.py
 
 - **probe_nc_bookmarks_url** looks for a Nextcloud instance at the given URL. 
@@ -97,27 +98,58 @@ Function calls to bulk-manipulate bookmarks, saving you a hundred single functio
 - **get_nc_bookmarks** retrieves a list of bookmarks matching given tags and search word
 - **find_nc_bookmark** returns a NC bookmark ID for that given URL
 - **get_nc_dump** returns a data frame with the most recent bookmarks
-
 - **get_nc_folders** returns IDs of all folders in the root folder
 - **get_nc_folder** returns the ID of the folder matching a regex
 - **get_nc_folder_id** checks where there is actually a folder wiht that name
 - **create_nc_folder** creates it. 
 
-## process-py
+## diigo_api.py
 
-#### Subroutine: describe
-- If there is a human description, check if valid and add LLM page description
-- If there is none, create
+### Using the Official API with auth and API key
+- **get_diigo_bookmarks** returns a list of bookmarks as dictionaries
+- **probe_diigo_api** probes whether Diigo bookmarks can be read
+- **write_diigo_bookmark** writes, or overwrites, a bookmark
+- **delete_diigo_bookmark** removes a bookmark, identified by url and title
+### Using the Diigo Interaction API (dia) with session cookies
+- **probe_dia** tries to reach the Interaction API, checking for the validity of the session cookies
+- **dia_session_authenticate** opens a Diigo session in a browser window with Selenium, has the user authenticate, and saves the session cookies to .ncdbookmarks/config.yaml
+- **dia_login** gets the session cookies from disk, and if they are not valid or do not exist, calls dia_session_authenticate, returning a valid session
+- **dia_load_user_items** returns a list of bookmarks
+- **dia_search_user_items** returns a list of bookmarks filtered by the "what" search term
+- **dia_get_id** returns the id of a bookmark
+- **dia_write** writes, or overwrites, a bookmark
+### The (as of yet) unusable Bulk API
+The Diigo website uses API calls to bulk-delete or modify bookmarks, but it seems to be unreachable from the outside. Routines all return 403 Forbidden and don't work.
+
+### Functions
+- **test_diigo_api** checks whether bookmarks can be read, modified and deleted, via the official API as well as via the Interaction API
+- **dia_privatize** uses the Interaction API to overwrite all bookmarks with the Private flag
+- **dia_export_delete** exports Diigo bookmarks to a CSV, giving you the option to delete them after dumping, to augment them with AI, and upload them to Nextcloud immediately. 
+- **diigo_export_delete** tries to do the same via the official API but is not really functional. 
+
+## import_export.py
+
+- **get_bookmarks** reads a CSV into a dataframe
+- **read_diigo_bookmarks** filters the CSV for Diigo columns and returns a dataframe
+- **update_bookmarks** takes a dataframe with bookmarks, does some rudimentary format checking, and either creates a CSV file, or appends the dataframe to it
+- **move_backup** checks whether a CSV file already exists, and if it does, moves it to a numbered .bak copy
+- **inspect_file** is a simple routine for displaying the first few lines of a CSV, and a list of the columns
+- **upload_nc_bookmarks** takes a bookmark file - assuming it is a Diigo CSV - and uploads the bookmarks to Nextcloud, refactoring the additional Diigo fields like created_at into the description
+- **get_nc_dump** exports all Nextcloud bookmarks and returns them as a df
+- **import_nc_csv** has you select a CSV file and uploads it to Nextcloud
+- **import_diigo_csv** does not work yet
+- **export_nc_csv** has you select a CSV file and writes all Nextcloud bookmarks to it
+
+## process.py
+- **refactor_diigo_bookmarks** takes a Diigo bookmark and reformats it for Nextcloud, adding placeholder for a LLM description and creation date to description.
+- **suggest_description** queries a website, passes the text to an LLM, and returns the suggested description
+
+
+## TODO
 
 #### Subroutine: Tag cleaner
 - Look for all tags that appear only once
 - look for all bookmarks that are untagged (or with tag no_tag)
-
-#### etc
-
-- Check if website is still available
-- If yes, do LLM summary, Create in "imported" folder
-- if no, create in OBSOLETE- folder 
 
 ## Format of description
 
