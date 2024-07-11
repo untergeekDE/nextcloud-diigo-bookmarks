@@ -2,7 +2,7 @@
 # 
 # Settings and absolute paths
 
-VERSION_STRING = "nextcloud-diigo-bookmarks V0.5.3"
+VERSION_STRING = "nextcloud-diigo-bookmarks V0.5.3.1"
 
 # Enables requests session logging to the terminal
 # LOG = 1

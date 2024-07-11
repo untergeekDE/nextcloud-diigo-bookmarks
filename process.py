@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import ollama
 import json
 from datetime import datetime
+from requests.exceptions import SSLError
 
 import logging
 import warnings
@@ -107,14 +108,24 @@ def suggest_description(url,description = "", silent = False):
     # Fetch the webpage content
     try:
         response = requests.get(url)
-    except:
+    except SSLError as e:
+        # Bad certificate? Then try again without verification
         # Set up logging
         logging.captureWarnings(True)
         logging.getLogger("urllib3").setLevel(logging.ERROR)
         if not silent:
             print(f"WARNING: Invalid certificate for {url}")
-        response = requests.get(url,verify=False)
+        try:
+            response = requests.get(url,verify=False)
+        except: 
+            if not silent:
+                print("Error: Could not read {url} even without verification")
+            return
         logging.captureWarnings(False)
+    except requests.exceptions.RequestException as e:
+        if not silent:
+            print(f"Failed to fetch the webpage. {e}")
+        return
     if response.status_code == 200:
         # Parse the HTML content
         soup = BeautifulSoup(response.text, 'html.parser')
