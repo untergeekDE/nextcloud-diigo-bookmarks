@@ -24,6 +24,9 @@ The Diigo API is a mixed bag - [find my documentation of it here](doc/diigo_api.
 - Backup Diigo bookmarks
 - Delete Diigo bookmarks
 - Import Diigo bookmarks into Nextcloud
+- Improve Nextcloud bookmarks with AI
+- Improve tagging 
+- Display dump files, analyze them, compare them
 
 It is supposed to be doing those things as well pretty soon: 
 - Groom the tags: check all tags that have been used only once
@@ -53,14 +56,12 @@ The program checks the credentials for Diigo and your Nextcloud installation, op
 
 ### Todo 
 
-- Routine to add AI description for all (unmarked) bookmarks
 - Tagging with AI
 - Reimport into Diigo (if only for further testing)
 - Tools submenu
 	- Comparison of Diigo and Nextcloud bookmarks
 	- Tags analysis
 	- Manual editing
-- Add Chrome support
 - Check whether Firefox, or Chrome, is actually on the system
 - Add OpenAI GPT4o/Anthropic Claude3 API support 
 
@@ -72,7 +73,7 @@ Many of my bookmarks missed a description, and tagging is far from perfect: lots
 
 This contains some experimental code to use a LLM to tag and describe bookmarks for you. LLMs are well capable of that, even smaller ones, but they might miss your original intention in bookmarking a URL. And reading websites and evaluating them with an LLM will produce quite a lot of tokens. So I decided to use a small LLM I can run locally on my machine ([Cohere's Aya](https://ollama.com/library/aya)) rather than the API of a larger model. 
 
-Local LLMs are damn slow, and they are infuriatingly ignorant, at least if you have grown accustomed the the power of State-of-the-art LLMs like OpenAI's GPT4o or Anthropic Claude 3 Opus, but they are cheaper, and they are more discreet. Aya does the job - it works well enough in German (my native language) to be able to use it. Yet if you would want to use a State-of-the-art LLM, my best pick at the moment would be Anthropic Claude 3.5, or GPT4o - I'll add support for them, maybe. 
+Local LLMs are damn slow, and they are infuriatingly ignorant, at least if you have grown accustomed the the power of State-of-the-art LLMs like OpenAI's GPT4o or Anthropic Claude 3 Opus, but they are cheaper, and they are more discreet. Aya does the job - it works well enough in German (my native language) to be able to use it. The recent Gemma2 model by Google is extremely capable for something of that size. Yet if you would want to use a State-of-the-art LLM, my best pick at the moment would be Anthropic Claude 3.5, or GPT4o - I'll add support for them, maybe. 
 
 ## Things I miss in Nextcloud Bookmarks
 
@@ -86,6 +87,7 @@ There are a couple of things the NC Bookmarks app does not do quite as well as D
 
 * **main.py**: A simple command-line app for executing functions. Run with ```python main.py``` (TODO)
 * **import_export.py**: Upload .csv diigo bookmark dump file to Nextcloud 
+* **nc_llm_improve.py**: Reads all Nextcloud bookmarks, and adds an LLM description of the website, if possible. 
 
 ### Authentication
 

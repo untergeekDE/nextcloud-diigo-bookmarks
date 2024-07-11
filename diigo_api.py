@@ -596,14 +596,14 @@ def dia_privatize():
             # Seems like we cannot bulk-delete from another IP; go for slow but reliable:
             # Overwrite every single bookmark
             for i in items:
-                print("\b-",end="")
+                print("\b-",end="", flush=True)
                 response = dia_write(title=i['title'],
                                         url=i['url'],
                                         link_id=i['link_id'],
                                         private="true",
                                         session=session)
                 if response:
-                    print("\b.",end="")
+                    print("\b.",end="", flush=True)
                     n+=1
             else:
                 n += p
@@ -631,7 +631,7 @@ def dia_export_delete(create_nextcloud = False,
     # Step through Diigo bookmarks in batches of diigo_batch_size = 100.
     print(f"Processing in batches of {diigo_batch_size}") 
     print(f"Batch progress: (.) Reading (v) Dumping {'(@) AI reflecting ' if use_llm else ''}{'(X) Removing' if remove_diigo else ''} (*) Done")
-    print(".",end="")
+    print(".",end="", flush=True)
     items = dia_load_user_items(page_num=p,
                                 sort = 'created_at',
                                 count= diigo_batch_size,    # defined in config.py
@@ -647,7 +647,7 @@ def dia_export_delete(create_nextcloud = False,
         # Create Nextcloud Bookmarks if necessary here
         if create_nextcloud: 
             for i in items:
-                print("\b^",end="")
+                print("\b^",end="", flush=True)
                 folders = [diigo_folder] 
                 if i['readed'] == 0:
                     folders.append(unread_folder)
@@ -665,7 +665,7 @@ def dia_export_delete(create_nextcloud = False,
                 # create bookmark
                 # Use LLM
                 if use_llm:
-                    print("\b@",end="")                 
+                    print("\b@",end="", flush=True)                 
                     llm_d = suggest_description(bookmark_data['url'],
                                                 bookmark_data['description'])
                     if llm_d == None: 
@@ -674,12 +674,12 @@ def dia_export_delete(create_nextcloud = False,
                         bookmark_data['description'] = bookmark_data['description'].replace('###LLM###', llm_d)
                     # TODO: Add tagging
                 edit_nc_bookmark(bookmark_data)
-                print("\b*",end="")
+                print("\b*",end="", flush=True)
                 
 
         # Bulk-delete bookmarks in list
         if remove_diigo: 
-            print("\bX",end="")
+            print("\bX",end="", flush=True)
             id_list = [i['link_id'] for i in items]
             response = dia_delete_b(id_list, session = session)
             if response == 403:
@@ -702,7 +702,7 @@ def dia_export_delete(create_nextcloud = False,
             # No bookmarks have been removed, so we have to go to the next page. 
             p += 1 
         # Load next batch
-        print("\b*.",end="")
+        print("\b*.",end="", flush=True)
         items = dia_load_user_items(page_num=p,
                                     sort = 'created_at',
                                     count=diigo_batch_size,

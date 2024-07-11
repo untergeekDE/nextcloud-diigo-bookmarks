@@ -196,13 +196,13 @@ def get_nc_dump(dump_path = None):
     print(f"Downloading Nextcloud bookmarks in batches of {nc_batch_size}")
     data = get_nc_bookmarks(page = 0, limit = nc_batch_size)
     while len(data) > 0: 
-        print(".",end="")
+        print(".",end="", flush=True)
         b_df = pd.DataFrame(data)
         df =  pd.concat([df, b_df], ignore_index=True)  
         if dump_path != None:
              update_bookmarks(dump_path,b_df)
         p += 1
-        print("\b*",end="")
+        print("\b*",end="", flush=True)
         data = get_nc_bookmarks(page = p, limit = nc_batch_size)
     return df
               

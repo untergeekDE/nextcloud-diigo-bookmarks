@@ -14,6 +14,7 @@ Overview on what the code does where.
 - **nc_bookmarks_api.py** contains functions for reading and manipulating Nextcloud bookmarks and folders
 - **nc_llm_improve** is, as of now, empty - it is supposed to contain a stand-alone routine to look at the bookmarks in a Nextcloud installation, and improve descriptions and bookmarks with an AI language model. 
 - **process.py** contains routines to process tags and descriptions. AI prompting to suggest descriptions and tags happens here, as well as basic stuff like counting tags, and selecting the better of two descriptions (easy: pick the longer one).
+- **nc_llm_improve.py** is a standalone routine that calls on functions from ```process``` and nc_bookmarks_api``` to check for bookmarks that have no LLM description yet, and use a local LLM to describe the website in question.  
 
 ### ```config.py``` - Global parameters, settings and prompts
 
@@ -40,7 +41,7 @@ Prompts:
 - summarize_en_p (prompt for summarizing websites in English)
 - summarize_de_p (the same in German)
 
-## diigo_api.py
+### diigo_api.py
 
 Functions to access and manipulate bookmarks in an account on diigo.com - see [diigo_api.md](diigo_api.md) for a description of what I know about the diigo API so far. Code contains access functions as well as use cases. 
 
@@ -57,7 +58,7 @@ Not only are these functions inconvenient to use, they seem to be heavily rate-l
 - **write_diigo_bookmark** creates, or overwrites, an unique bookmark, as determined by URL and title. If these already exist, the bookmark is overwritten. 
 - **delete_diigo_bookmark** deletes a bookmark identified by URL and title. 
 
-### The interaction API
+#### The interaction API
 
 These are function calls that are used by the Diigo website, and can be used for external calls as well. They are authenticated not by the API key but by session cookies from a valid Diigo browser session. 
 
@@ -71,7 +72,7 @@ These function calls are all named dia_ here, short for: Diigo Interaction API.
 - **dia_get_id** returns a list of bookmark ```list_id``` values for a bookmark query
 - **dia_write_** creates, or overwrites, a bookmark. 
 
-### The Bulk API
+#### The Bulk API
 
 Function calls to bulk-manipulate bookmarks, saving you a hundred single function calls with one bulk call. Unfortunately, they need some unknown extra method to authenticate, and don't work yet.
 
@@ -142,7 +143,6 @@ The Diigo website uses API calls to bulk-delete or modify bookmarks, but it seem
 ## process.py
 - **refactor_diigo_bookmarks** takes a Diigo bookmark and reformats it for Nextcloud, adding placeholder for a LLM description and creation date to description.
 - **suggest_description** queries a website, passes the text to an LLM, and returns the suggested description
-
 
 ## TODO
 
