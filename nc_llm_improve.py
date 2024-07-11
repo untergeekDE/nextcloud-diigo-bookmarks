@@ -51,6 +51,8 @@ if __name__ == "__main__":
             if llm_description == None: 
                 # Site is unreachable
                 print("\bx",end="", flush=True)
+                if nc_unread_folder not in b['folders']:
+                    b['folders'].append(nc_unread_folder)
             else:
                 # Upload modified description
                 description = description.replace("###LLM###",llm_description)
