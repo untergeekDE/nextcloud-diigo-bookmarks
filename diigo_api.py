@@ -73,7 +73,7 @@ def get_diigo_bookmarks(d_start = 0, d_count= 10, tags=""):
         d_params['start'] = d_start
     if d_count != 10: 
         d_params['count'] = d_count
-    response = requests.get(f"{diigo_url}bookmarks",
+    response = requests.get("https://secure.diigo.com/api/v2/bookmarks",
                             params = d_params,
                             headers= AUTH_HEADERS,
                             auth=(config['diigo']['user'], config['diigo']['password']),
@@ -126,7 +126,7 @@ def write_diigo_bookmark(title,url, # these are required, i.e. they ID the bookm
         'readLater': f'{"yes" if readLater else "no"}',
         'merge': f'{"yes" if merge else "no"}',
     }
-    response = requests.post(f"{diigo_url}bookmarks",
+    response = requests.post("https://secure.diigo.com/api/v2/bookmarks",
                             params = d_params,
                             headers= AUTH_HEADERS,
                             auth=(config['diigo']['user'], config['diigo']['password']),
@@ -164,7 +164,7 @@ def delete_diigo_bookmark(title,url,session = None):
         'url': url,
     }
     if session == None: 
-        response = requests.delete(f"{diigo_url}bookmarks",
+        response = requests.delete("https://secure.diigo.com/api/v2/bookmarksbookmarks",
                                 params = d_params,
                                 headers= AUTH_HEADERS,
                                 auth=(diigo_user,diigo_password),
@@ -217,7 +217,13 @@ def probe_dia(session):
 # Get session cookies to use, either from disk, or from a browser session 
 def dia_session_authenticate():
     # Initialize the Selenium WebDriver (you may need to adjust this based on your browser)
-    driver = webdriver.Firefox()  # Or webdriver.Firefox(), etc.
+    try:
+        driver = webdriver.Firefox()  # Or webdriver.Firefox(), etc.
+    except:
+        try:
+            driver = webdriver.Chrome()
+        except:
+            raise("Could not initiate Selenium driver for Firefox or Chrome")
     try:
         # Navigate to the Diigo login page
         driver.get('https://www.diigo.com/sign-in')
@@ -514,6 +520,10 @@ def dia_delete_b(link_id, session=None):
         print(f"Failed to execute delete_b.\nStatus code: {response.status_code}")
         print(f"API gives this reason: {response.text}")
         return response.status_code   
+
+# Get file, upload
+def upload_diigo_bookmarks(f):
+    return None
 
 ###################################################################################
 ########## Test both APIs by writing, overwriting, listing, deleting bookmark #####
