@@ -521,10 +521,6 @@ def dia_delete_b(link_id, session=None):
         print(f"API gives this reason: {response.text}")
         return response.status_code   
 
-# Get file, upload
-def upload_diigo_bookmarks(f):
-    return None
-
 ###################################################################################
 ########## Test both APIs by writing, overwriting, listing, deleting bookmark #####
 

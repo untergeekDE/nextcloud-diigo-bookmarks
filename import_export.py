@@ -8,8 +8,7 @@ import pandas as pd
 from config import *
 from process import *
 from file_menu import file_menu, proceed
-from nc_bookmarks_api import probe_nc_bookmarks, get_nc_bookmarks, get_nc_diigo_folder, find_nc_bookmark
-from diigo_api import upload_diigo_bookmarks
+from nc_bookmarks_api import probe_nc_bookmarks, get_nc_bookmarks, get_nc_diigo_folder, find_nc_bookmark, create_nc_bookmark
 
 # import the CSV with the Diigo bookmarks
 """
@@ -117,10 +116,10 @@ def inspect_file(path):
 def upload_nc_bookmarks(b_path):
     nc_key = config['nc_bookmarks']['password']
     probe_nc_bookmarks()
-    bookmarks_df = get_bookmarks_bookmarks(b_path)
+    bookmarks_df = get_nc_bookmarks(b_path)
     print(bookmarks_df.head(5))
     diigo_folder = get_nc_diigo_folder()
-    diigo_df = geto_bookmarks(b_path)
+    diigo_df = get_bookmarks(b_path)
     # tags ist ein String, müssen wir erst splitten - 
     # und wenn wir dabei sind, gleich klein schreiben.
     print(f"Number of bookmarks: {len(diigo_df)}")
@@ -233,7 +232,7 @@ def import_diigo_csv(f):
 
 # Exports all Nextcloud bookmarks to a CSV file in the selected directory. 
 # User may change directory and file name
-def export_csv(f):
+def export_nc_csv(f):
     global config
     config = get_config(CONFIG_PATH)
     s = 1 # Selection

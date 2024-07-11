@@ -7,6 +7,9 @@ from bs4 import BeautifulSoup
 import ollama
 import json
 from datetime import datetime
+
+import logging
+import warnings
  
 from config import *
 
@@ -98,14 +101,27 @@ def refactor_diigo_bookmark(url,
     }
     return d
 
-def suggest_description(url,description = ""):
+def suggest_description(url,description = "", silent = False):
+    # Tries to read the webpage at url, return None if not reachable,
+    # or a LLM-created description of the page. 
     # Fetch the webpage content
-    response = requests.get(url)
+    try:
+        response = requests.get(url)
+    except:
+        # Set up logging
+        logging.captureWarnings(True)
+        logging.getLogger("urllib3").setLevel(logging.ERROR)
+        if not silent:
+            print(f"WARNING: Invalid certificate for {url}")
+        response = requests.get(url,verify=False)
+        logging.captureWarnings(False)
     if response.status_code == 200:
         # Parse the HTML content
         soup = BeautifulSoup(response.text, 'html.parser')
         # Extract the main text content
-        title = soup.find('title').string
+        title = soup.find('title')
+        if title != None:
+            title = str(title)
         main_content = soup.get_text()
                 
         # Generate a summary using the Gemma2 model
@@ -132,10 +148,12 @@ def suggest_description(url,description = ""):
                                        options=options)
             return llm_response['message']['content']
         except ollama.ResponseError as e:
-            print(f"Could not query LLM via ollama: {e.error}")
+            if not silent: 
+                print(f"Could not query LLM via ollama: {e.error}")
             return ""
     else:
-        print(f"Failed to fetch the webpage. Status code: {response.status_code}")
+        if not silent:
+            print(f"Failed to fetch the webpage. Status code: {response.status_code}")
         return None
      #
 
@@ -158,3 +176,7 @@ def write_bookmarks_file(bookmarks_dict, lastdate):
     with open(tags_path, 'w') as f:
         json.dump(export_dict, f)
     
+if __name__ == "__main__":
+    print("AI-based improvement of tags")
+    print("Not implemented yet. Sorry. ^_^")
+    input("Press ENTER to return to menu")

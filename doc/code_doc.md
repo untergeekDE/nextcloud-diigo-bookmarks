@@ -97,7 +97,6 @@ Function calls to bulk-manipulate bookmarks, saving you a hundred single functio
 - **edit_nc_bookmark** updates a bookmark, or creates it from scratch
 - **get_nc_bookmarks** retrieves a list of bookmarks matching given tags and search word
 - **find_nc_bookmark** returns a NC bookmark ID for that given URL
-- **get_nc_dump** returns a data frame with the most recent bookmarks
 - **get_nc_folders** returns IDs of all folders in the root folder
 - **get_nc_folder** returns the ID of the folder matching a regex
 - **get_nc_folder_id** checks where there is actually a folder wiht that name
