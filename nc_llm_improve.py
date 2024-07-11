@@ -14,13 +14,15 @@
 
 from config import *
 from process import * 
-from nc_bookmarks_api import get_nc_bookmarks, edit_nc_bookmark, probe_nc_bookmarks 
+from nc_bookmarks_api import *
 
 if __name__ == "__main__":
     # Import config
     # Try to reach NC bookmarks
     if not probe_nc_bookmarks():
         print("Nextcloud unreachable. Returning.")
+    # Get folder ID for marking unreadable bookmarks
+    nc_unread_folder = get_nc_folder(UNREAD_FOLDER)
     p = 0
     # Smaller stepwidth, loading the bookmarks is negligible
     print(f"Batch progress: (.) Reading (x) Checking (^) Website unreachable (@) AI reflecting (*) Done")
@@ -47,6 +49,7 @@ if __name__ == "__main__":
                 if not (llm_description == None):
                     description = description + "# LLM_DESCRIPTION\n###LLM###"
             if llm_description == None: 
+                # Site is unreachable
                 print("\bx",end="", flush=True)
             else:
                 # Upload modified description
