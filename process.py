@@ -122,6 +122,8 @@ def suggest_description(url,description = "", silent = False):
         title = soup.find('title')
         if title != None:
             title = str(title)
+        else:
+            title = ""
         main_content = soup.get_text()
                 
         # Generate a summary using the Gemma2 model
